@@ -1,5 +1,6 @@
-import "./Dashboard.css";
+import "../Styles/Dashboard.css";
 import { useAuth } from "../Context/AuthContext";
+import { Link } from "react-router-dom";
 
 const Dashboard = () => {
   const { user } = useAuth();
@@ -8,7 +9,32 @@ const Dashboard = () => {
     <div className="dashboard-container">
       <div className="dashboard-content">
         <div className="welcome-section">
-          <h1>Welcome back, {user?.name?.split(" ")[0] || "User"}! 👋</h1>
+          <div>
+            <h1>Welcome back, {user?.name?.split(" ")[0] || "User"}! 👋</h1>
+          </div>
+          <Link to="/branch" className="branch-nav-btn">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+              <path
+                d="M9 22V12H15V22"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Manage Branches
+          </Link>
         </div>
         <div className="stats-grid">
           <div className="stat-card">
@@ -85,7 +111,7 @@ const Dashboard = () => {
             </div>
             <div className="stat-info">
               <h3>Revenue</h3>
-              <p className="stat-value">$45,678</p>
+              <p className="stat-value">₹1,07,048</p>
               <span className="stat-change positive">+8% from last month</span>
             </div>
           </div>
@@ -121,8 +147,8 @@ const Dashboard = () => {
               </svg>
             </div>
             <div className="stat-info">
-              <h3>Orders</h3>
-              <p className="stat-value">892</p>
+              <h3>Bills</h3>
+              <p className="stat-value">280</p>
               <span className="stat-change negative">-3% from last month</span>
             </div>
           </div>
@@ -158,6 +184,65 @@ const Dashboard = () => {
           </div>
         </div>
         <div className="dashboard-grid">
+          <div className="dashboard-card revenue-card">
+            <div className="card-header">
+              <h2>Today's Revenue</h2>
+            </div>
+            <div className="revenue-table-container">
+              <table className="revenue-table">
+                <thead>
+                  <tr>
+                    <th>Branch</th>
+                    <th>Code</th>
+                    <th>Revenue</th>
+                    <th>Bills</th>
+                    <th>Status</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr>
+                    <td>Main Branch</td>
+                    <td>MB001</td>
+                    <td className="revenue-amount">₹45,678</td>
+                    <td>124</td>
+                    <td>
+                      <span className="status-badge active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>North Branch</td>
+                    <td>NB002</td>
+                    <td className="revenue-amount">₹32,450</td>
+                    <td>89</td>
+                    <td>
+                      <span className="status-badge active">Active</span>
+                    </td>
+                  </tr>
+                  <tr>
+                    <td>South Branch</td>
+                    <td>SB003</td>
+                    <td className="revenue-amount">₹28,920</td>
+                    <td>67</td>
+                    <td>
+                      <span className="status-badge inactive">Inactive</span>
+                    </td>
+                  </tr>
+                  <tr className="total-row">
+                    <td colSpan="2">
+                      <strong>Total</strong>
+                    </td>
+                    <td className="revenue-amount">
+                      <strong>₹1,07,048</strong>
+                    </td>
+                    <td>
+                      <strong>280</strong>
+                    </td>
+                    <td></td>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+          </div>
           <div className="dashboard-card">
             <div className="card-header">
               <h2>Recent Activity</h2>
@@ -193,6 +278,29 @@ const Dashboard = () => {
               <h2>Quick Actions</h2>
             </div>
             <div className="quick-actions">
+              <Link to="/branch" className="action-button">
+                <svg
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                  <path
+                    d="M9 22V12H15V22"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+                Manage Branches
+              </Link>
               <button className="action-button">
                 <svg
                   viewBox="0 0 24 24"

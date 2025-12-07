@@ -1,4 +1,4 @@
-import "./Dashboard.css";
+import "../Styles/Dashboard.css";
 import { useAuth } from "../Context/AuthContext";
 
 const Dashboard = () => {

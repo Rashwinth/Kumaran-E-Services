@@ -232,15 +232,12 @@ const Login = () => {
               </div>
             </div>
 
-            <div className="form-options">
-              <label className="remember-me">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
-              <Link to="/forgot-password" className="forgot-password">
-                Forgot Password?
-              </Link>
-            </div>
+      <div className="form d-flex justify-content-end align-items-end">
+  <Link to="/forgot-password" className="forgot-password">
+    Forgot Password?
+  </Link>
+</div>
+
 
             <button type="submit" className="login-button" disabled={loading}>
               {loading ? (
@@ -269,14 +266,14 @@ const Login = () => {
             </button>
           </form>
 
-          <div className="login-footer">
+          {/* <div className="login-footer">
             <p>
               New employee?{" "}
               <Link to="/register" className="register-link">
                 Register here
               </Link>
             </p>
-          </div>
+          </div> */}
 
           <div
             style={{

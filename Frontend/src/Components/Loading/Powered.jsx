@@ -7,7 +7,7 @@ const Powered = ({ theme, className = "" }) => {
     <div className={`powered-container ${className}`}>
       <span
         style={{
-          color: isDark ? "#94a3b8" : "#64748b",
+          color: isDark ? "#000000ff" : "#000000ff",
           fontSize: "0.75rem",
           letterSpacing: "0.05em",
           fontFamily: "'Inter', sans-serif",
@@ -27,7 +27,7 @@ const Powered = ({ theme, className = "" }) => {
         <span
           className="powered-text"
           style={{
-            color: isDark ? "#000000ff" : "#9caef6ff",
+            color: isDark ? "#000000ff" : "#000000ff",
             fontSize: "0.875rem",
           }}
         >
