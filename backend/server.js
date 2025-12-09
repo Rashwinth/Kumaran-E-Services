@@ -1,6 +1,7 @@
 const express = require("express");
 const dotenv = require("dotenv");
 const cors = require("cors");
+const cookieParser = require("cookie-parser");
 const connectDB = require("./database/db");
 
 dotenv.config();
@@ -10,17 +11,31 @@ const app = express();
 
 const authRoutes = require("./routes/authRoutes");
 const { default: mongoose } = require("mongoose");
+const Adminrouter = require("./routes/AdminRoutes");
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
 
-// Open CORS
-app.use(cors());
+// CORS configuration for cookie-based auth
+app.use(
+  cors({
+    origin: [
+      "http://localhost:5173", // Admin frontend
+      "http://localhost:5174", // Staff frontend
+      process.env.FRONTEND_URL,
+      process.env.ADMIN_URL,
+    ].filter(Boolean),
+    credentials: true, // Allow cookies to be sent
+    methods: ["GET", "POST", "PUT", "DELETE", "PATCH"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+  })
+);
 
 // Routes
 app.use("/api/auth", authRoutes);
-app.use("/admin", authRoutes);
+app.use("/admin", Adminrouter);
 
 // Health check route
 app.get("/api/health", (req, res) => {

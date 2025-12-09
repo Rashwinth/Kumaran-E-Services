@@ -1,11 +1,11 @@
 const User = require("../models/user");
-const jwt = require("jsonwebtoken");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, password } = req.body;
+    const { name, email, phone, age, password, role, branchCode, branchId } =
+      req.body;
 
-    if (!name || !email || !phone || !password) {
+    if (!name || !email || !phone || !age || !password || !branchCode) {
       return res.status(400).json({
         success: false,
         message: "Please provide all required fields",
@@ -35,33 +35,24 @@ exports.register = async (req, res) => {
       name,
       email,
       phone,
+      age,
       password,
+      role: role || "staff",
+      branchCode,
     });
-
-    // Generate tokens
-    const accessToken = generateAccessToken(user._id);
-    const refreshToken = generateRefreshToken(
-      user._id,
-      user.credentials.tokenVersion
-    );
-
-    // Store refresh token in database
-    user.credentials.refreshToken = refreshToken;
-    user.credentials.lastTokenRefresh = Date.now();
-    await user.save({ validateBeforeSave: false });
 
     res.status(201).json({
       success: true,
       message: "Employee registered successfully",
-      accessToken,
-      refreshToken,
-      user: {
+      employee: {
         id: user._id,
         name: user.name,
         email: user.email,
         employeeId: user.employeeId,
         phone: user.phone,
+        age: user.age,
         role: user.role,
+        branchCode: user.branchCode,
       },
     });
   } catch (error) {

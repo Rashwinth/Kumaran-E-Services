@@ -17,7 +17,6 @@ const generateRefreshToken = (id, tokenVersion) => {
   );
 };
 
-
 exports.login = async (req, res) => {
   try {
     const { identifier, password, portal } = req.body;
@@ -93,11 +92,19 @@ exports.login = async (req, res) => {
     user.credentials.lastTokenRefresh = Date.now();
     await user.save({ validateBeforeSave: false });
 
+    // Set refresh token as HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true, // Cannot be accessed via JavaScript
+      secure: process.env.NODE_ENV === "production", // Only HTTPS in production
+      sameSite: "strict", // CSRF protection
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
     res.status(200).json({
       success: true,
       message: "Login successful",
       accessToken,
-      refreshToken,
       user: {
         id: user._id,
         name: user.name,
@@ -119,7 +126,8 @@ exports.login = async (req, res) => {
 
 exports.refreshToken = async (req, res) => {
   try {
-    const { refreshToken } = req.body;
+    // Get refresh token from HTTP-only cookie
+    const refreshToken = req.cookies.refreshToken;
 
     if (!refreshToken) {
       return res.status(401).json({
@@ -220,6 +228,14 @@ exports.logout = async (req, res) => {
     user.credentials.refreshToken = null;
     await user.save({ validateBeforeSave: false });
 
+    // Clear refresh token cookie
+    res.clearCookie("refreshToken", {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      path: "/",
+    });
+
     res.status(200).json({
       success: true,
       message: "Logged out successfully",
@@ -289,11 +305,19 @@ exports.updatePassword = async (req, res) => {
     user.credentials.lastTokenRefresh = Date.now();
     await user.save({ validateBeforeSave: false });
 
+    // Set new refresh token as HTTP-only cookie
+    res.cookie("refreshToken", refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "strict",
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
+      path: "/",
+    });
+
     res.status(200).json({
       success: true,
       message: "Password updated successfully",
       accessToken,
-      refreshToken,
     });
   } catch (error) {
     console.error("Update password error:", error);

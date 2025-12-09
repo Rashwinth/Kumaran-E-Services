@@ -32,6 +32,18 @@ const userSchema = new mongoose.Schema(
       required: [true, "Please provide a phone number"],
       match: [/^[0-9]{10}$/, "Please provide a valid 10-digit phone number"],
     },
+    age: {
+      type: Number,
+      required: [true, "Please provide age"],
+      min: [18, "Age must be at least 18"],
+      max: [100, "Age must be less than 100"],
+    },
+    branchCode: {
+      type: String,
+      required: [true, "Please provide branch code"],
+      trim: true,
+      uppercase: true,
+    },
     password: {
       type: String,
       required: [true, "Please provide a password"],
@@ -87,12 +99,18 @@ const userSchema = new mongoose.Schema(
 );
 
 // Generate employee ID and encrypt password before saving
-userSchema.pre("save", async function () {
+userSchema.pre("save", async function (next) {
   try {
     // Generate employee ID if new user
     if (!this.employeeId && this.isNew) {
-      const count = await mongoose.model("User").countDocuments();
-      this.employeeId = `EMP${String(count + 1).padStart(4, "0")}`;
+      // Count employees in the same branch
+      const count = await mongoose
+        .model("User")
+        .countDocuments({ branchCode: this.branchCode });
+      this.employeeId = `${this.branchCode}-EMP${String(count + 1).padStart(
+        4,
+        "0"
+      )}`;
     }
 
     // Hash password if modified

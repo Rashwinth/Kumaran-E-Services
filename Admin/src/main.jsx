@@ -3,6 +3,7 @@ import { createRoot } from "react-dom/client";
 import "./index.css";
 import App from "./App.jsx";
 import { AppProviders } from "./Context/AppProvider.jsx";
+import "bootstrap-icons/font/bootstrap-icons.css";
 
 // Bootstrap CSS + JS - REMOVED
 // import "bootstrap/dist/css/bootstrap.min.css";

@@ -1,84 +1,39 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import "../../Styles/BranchDetail.css";
-
-// Sample hardcoded data (same as Branch.jsx)
-const branchesData = [
-  {
-    _id: "1",
-    name: "Main Branch",
-    code: "MB001",
-    address: {
-      street: "123 Main Street",
-      city: "Chennai",
-      state: "Tamil Nadu",
-      country: "India",
-      pincode: "600001",
-    },
-    contact: {
-      phone: "9876543210",
-      email: "main@kumaran.com",
-    },
-    gstNumber: "33AAAAA0000A1Z5",
-    status: "Active",
-    createdAt: "2024-01-15T10:30:00Z",
-  },
-  {
-    _id: "2",
-    name: "North Branch",
-    code: "NB002",
-    address: {
-      street: "456 North Avenue",
-      city: "Coimbatore",
-      state: "Tamil Nadu",
-      country: "India",
-      pincode: "641001",
-    },
-    contact: {
-      phone: "9876543211",
-      email: "north@kumaran.com",
-    },
-    gstNumber: "33BBBBB0000B1Z5",
-    status: "Active",
-    createdAt: "2024-02-20T14:20:00Z",
-  },
-  {
-    _id: "3",
-    name: "South Branch",
-    code: "SB003",
-    address: {
-      street: "789 South Road",
-      city: "Madurai",
-      state: "Tamil Nadu",
-      country: "India",
-      pincode: "625001",
-    },
-    contact: {
-      phone: "9876543212",
-      email: "south@kumaran.com",
-    },
-    gstNumber: "33CCCCC0000C1Z5",
-    status: "Inactive",
-    createdAt: "2024-03-10T09:15:00Z",
-  },
-];
+import { useBranch } from "../../Context/BranchContext";
+import { useAuth } from "../../Context/AuthContext";
 
 const BranchDetail = () => {
   const { id } = useParams();
   const navigate = useNavigate();
+  const { accessToken } = useAuth();
+
+  const { branches, getBranches, updateBranch } = useBranch();
   const [branch, setBranch] = useState(null);
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
 
   useEffect(() => {
-    const foundBranch = branchesData.find((b) => b._id === id);
-    if (foundBranch) {
-      setBranch(foundBranch);
-      setFormData(foundBranch);
+    if (!accessToken) return;
+
+    // If we have branches in context, find the one we need
+    if (branches.length > 0) {
+      const foundBranch = branches.find((b) => b._id === id);
+      if (foundBranch) {
+        setBranch(foundBranch);
+        setFormData(foundBranch);
+      } else {
+        // If not found in current loaded branches, maybe try fetching again or redirect
+        // Ideally, if branches are loaded but ID not found, it doesn't exist.
+        // But for safety against stale state, we could just say not found.
+        navigate("/branch");
+      }
     } else {
-      navigate("/branch");
+      // If no branches loaded yet, fetch them
+      getBranches();
     }
-  }, [id, navigate]);
+  }, [id, branches, accessToken, getBranches, navigate]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -99,14 +54,18 @@ const BranchDetail = () => {
     }
   };
 
-  const handleSave = () => {
-    setBranch(formData);
-    setIsEditing(false);
-    // Here you would normally save to backend
+  const handleSave = async () => {
+    try {
+      await updateBranch(id, formData);
+      setIsEditing(false);
+      // branch state will be updated by useEffect when branches context updates
+    } catch (error) {
+      console.error("Failed to update branch", error);
+    }
   };
 
   const handleCancel = () => {
-    setFormData(branch);
+    setFormData(branch); // Reset form data to original branch data
     setIsEditing(false);
   };
 

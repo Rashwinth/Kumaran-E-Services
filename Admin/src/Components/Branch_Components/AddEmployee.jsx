@@ -1,27 +1,65 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useParams, useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
+import axios from "axios";
 import "../../Styles/AddEmployee.css";
 import { useAuth } from "../../Context/AuthContext";
+
+// Sample branch data (same as in BranchDetail.jsx)
+const branchesData = [
+  {
+    _id: "1",
+    name: "Main Branch",
+    code: "MB001",
+  },
+  {
+    _id: "2",
+    name: "North Branch",
+    code: "NB002",
+  },
+  {
+    _id: "3",
+    name: "South Branch",
+    code: "SB003",
+  },
+];
 
 const AddEmployee = () => {
   const { id } = useParams(); // Branch ID
   const navigate = useNavigate();
+  const [branch, setBranch] = useState(null);
   const [formData, setFormData] = useState({
     name: "",
     email: "",
     phone: "",
+    age: "",
     password: "",
     confirmPassword: "",
     role: "staff",
-    branch: id,
+    branchId: id,
+    branchCode: "",
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const baseURL = import.meta.env.VITE_BACKEND_BASE_URI;
+  const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/admin`;
   const { accessToken, user } = useAuth();
   const userId = user.id;
+
+  // Fetch branch data on component mount
+  useEffect(() => {
+    const foundBranch = branchesData.find((b) => b._id === id);
+    if (foundBranch) {
+      setBranch(foundBranch);
+      setFormData((prev) => ({
+        ...prev,
+        branchCode: foundBranch.code,
+      }));
+    } else {
+      toast.error("Branch not found");
+      navigate("/branch");
+    }
+  }, [id, navigate]);
 
   // Password strength checker
   const [passwordStrength, setPasswordStrength] = useState({
@@ -89,6 +127,7 @@ const AddEmployee = () => {
       !formData.name ||
       !formData.email ||
       !formData.phone ||
+      !formData.age ||
       !formData.password ||
       !formData.confirmPassword
     ) {
@@ -106,6 +145,12 @@ const AddEmployee = () => {
       return;
     }
 
+    const ageNum = parseInt(formData.age);
+    if (isNaN(ageNum) || ageNum < 18 || ageNum > 100) {
+      toast.error("Please enter a valid age between 18 and 100");
+      return;
+    }
+
     if (!validatePassword()) {
       return;
     }
@@ -118,19 +163,17 @@ const AddEmployee = () => {
     setLoading(true);
 
     try {
-      // Here you would call your API to register the employee
       const result = await axios.post(
         `${baseURL}/registeremployee/${userId}`,
-        { formData },
+        formData,
         {
-          headerrs: {
-            Authorization: `Beraer ${accessToken}`,
+          headers: {
+            Authorization: `Bearer ${accessToken}`,
           },
         }
       );
 
-      // Simulated success
-      if (result.ok) {
+      if (result.data.success) {
         toast.success("Employee registered successfully!");
 
         // Redirect back to branch detail page
@@ -140,11 +183,15 @@ const AddEmployee = () => {
       }
     } catch (error) {
       console.error("Registration error:", error);
-      toast.error("An error occurred. Please try again.");
+      toast.error(
+        error.response?.data?.message || "An error occurred. Please try again."
+      );
     } finally {
       setLoading(false);
     }
   };
+
+  if (!branch) return null;
 
   return (
     <div className="add-employee-container">
@@ -152,48 +199,17 @@ const AddEmployee = () => {
         <div className="add-employee-card">
           <div className="add-employee-header">
             <Link to={`/branch/${id}`} className="back-button">
-              <svg
-                viewBox="0 0 24 24"
-                fill="none"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M19 12H5M5 12L12 19M5 12L12 5"
-                  stroke="currentColor"
-                  strokeWidth="2"
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                />
-              </svg>
+              <i className="bi bi-arrow-left"></i>
               Back to Branch
             </Link>
             <div className="header-title">
               <div className="logo-icon">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
+                <i className="bi bi-person-plus-fill"></i>
               </div>
               <h1>Add New Employee</h1>
             </div>
             <p className="subtitle">
-              Register a new staff member for this branch
+              Register a new staff member for {branch.name} ({branch.code})
             </p>
           </div>
 
@@ -201,26 +217,7 @@ const AddEmployee = () => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="name">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M20 21V19C20 17.9391 19.5786 16.9217 18.8284 16.1716C18.0783 15.4214 17.0609 15 16 15H8C6.93913 15 5.92172 15.4214 5.17157 16.1716C4.42143 16.9217 4 17.9391 4 19V21"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-person-fill"></i>
                   Full Name
                 </label>
                 <input
@@ -236,26 +233,7 @@ const AddEmployee = () => {
 
               <div className="form-group">
                 <label htmlFor="role">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-person-badge-fill"></i>
                   Role
                 </label>
                 <select
@@ -267,7 +245,6 @@ const AddEmployee = () => {
                 >
                   <option value="staff">Staff</option>
                   <option value="manager">Manager</option>
-                  <option value="admin">Admin</option>
                 </select>
               </div>
             </div>
@@ -275,26 +252,7 @@ const AddEmployee = () => {
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="email">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M4 4H20C21.1 4 22 4.9 22 6V18C22 19.1 21.1 20 20 20H4C2.9 20 2 19.1 2 18V6C2 4.9 2.9 4 4 4Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M22 6L12 13L2 6"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-envelope-fill"></i>
                   Email Address
                 </label>
                 <input
@@ -310,19 +268,7 @@ const AddEmployee = () => {
 
               <div className="form-group">
                 <label htmlFor="phone">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M22 16.92V19.92C22.0011 20.1985 21.9441 20.4742 21.8325 20.7293C21.7209 20.9845 21.5573 21.2136 21.3521 21.4019C21.1468 21.5901 20.9046 21.7335 20.6407 21.8227C20.3769 21.9119 20.0974 21.9451 19.82 21.92C16.7428 21.5856 13.787 20.5341 11.19 18.85C8.77382 17.3147 6.72533 15.2662 5.18999 12.85C3.49997 10.2412 2.44824 7.27099 2.11999 4.17997C2.095 3.90344 2.12787 3.62474 2.21649 3.3616C2.30512 3.09846 2.44756 2.85666 2.63476 2.65162C2.82196 2.44658 3.0498 2.28271 3.30379 2.17052C3.55777 2.05833 3.83233 2.00026 4.10999 1.99997H7.10999C7.5953 1.9952 8.06579 2.16705 8.43376 2.48351C8.80173 2.79996 9.04207 3.23945 9.10999 3.71997C9.23662 4.68004 9.47144 5.6227 9.80999 6.52997C9.94454 6.8879 9.97366 7.27689 9.8939 7.65086C9.81415 8.02482 9.62886 8.36809 9.35999 8.63998L8.08999 9.90997C9.51355 12.4135 11.5864 14.4864 14.09 15.91L15.36 14.64C15.6319 14.3711 15.9751 14.1858 16.3491 14.1061C16.7231 14.0263 17.1121 14.0554 17.47 14.19C18.3773 14.5285 19.3199 14.7634 20.28 14.89C20.7658 14.9585 21.2094 15.2032 21.5265 15.5775C21.8437 15.9518 22.0122 16.4296 22 16.92Z"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-telephone-fill"></i>
                   Phone Number
                 </label>
                 <input
@@ -339,34 +285,29 @@ const AddEmployee = () => {
               </div>
             </div>
 
+            {/* Full Width Age Field */}
+            <div className="form-group full-width">
+              <label htmlFor="age">
+                <i className="bi bi-calendar-check-fill"></i>
+                Age
+              </label>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                placeholder="Enter age (18-100)"
+                required
+                min="18"
+                max="100"
+              />
+            </div>
+
             <div className="form-row">
               <div className="form-group">
                 <label htmlFor="password">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="3"
-                      y="11"
-                      width="18"
-                      height="11"
-                      rx="2"
-                      ry="2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-lock-fill"></i>
                   Password
                 </label>
                 <div className="password-input-wrapper">
@@ -384,38 +325,18 @@ const AddEmployee = () => {
                     className="password-toggle"
                     onClick={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? "👁️" : "👁️‍🗨️"}
+                    <i
+                      className={
+                        showPassword ? "bi bi-eye-slash-fill" : "bi bi-eye-fill"
+                      }
+                    ></i>
                   </button>
                 </div>
               </div>
 
               <div className="form-group">
                 <label htmlFor="confirmPassword">
-                  <svg
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <rect
-                      x="3"
-                      y="11"
-                      width="18"
-                      height="11"
-                      rx="2"
-                      ry="2"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                    <path
-                      d="M7 11V7C7 5.67392 7.52678 4.40215 8.46447 3.46447C9.40215 2.52678 10.6739 2 12 2C13.3261 2 14.5979 2.52678 15.5355 3.46447C16.4732 4.40215 17 5.67392 17 7V11"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
+                  <i className="bi bi-lock-fill"></i>
                   Confirm Password
                 </label>
                 <div className="password-input-wrapper">
@@ -433,7 +354,13 @@ const AddEmployee = () => {
                     className="password-toggle"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? "👁️" : "👁️‍🗨️"}
+                    <i
+                      className={
+                        showConfirmPassword
+                          ? "bi bi-eye-slash-fill"
+                          : "bi bi-eye-fill"
+                      }
+                    ></i>
                   </button>
                 </div>
               </div>
@@ -446,31 +373,61 @@ const AddEmployee = () => {
                 <ul className="requirements-list">
                   <li className={passwordStrength.minLength ? "met" : ""}>
                     <span className="check-icon">
-                      {passwordStrength.minLength ? "✓" : "○"}
+                      <i
+                        className={
+                          passwordStrength.minLength
+                            ? "bi bi-check-circle-fill"
+                            : "bi bi-circle"
+                        }
+                      ></i>
                     </span>
                     At least 8 characters
                   </li>
                   <li className={passwordStrength.hasUppercase ? "met" : ""}>
                     <span className="check-icon">
-                      {passwordStrength.hasUppercase ? "✓" : "○"}
+                      <i
+                        className={
+                          passwordStrength.hasUppercase
+                            ? "bi bi-check-circle-fill"
+                            : "bi bi-circle"
+                        }
+                      ></i>
                     </span>
                     One uppercase letter (A-Z)
                   </li>
                   <li className={passwordStrength.hasLowercase ? "met" : ""}>
                     <span className="check-icon">
-                      {passwordStrength.hasLowercase ? "✓" : "○"}
+                      <i
+                        className={
+                          passwordStrength.hasLowercase
+                            ? "bi bi-check-circle-fill"
+                            : "bi bi-circle"
+                        }
+                      ></i>
                     </span>
                     One lowercase letter (a-z)
                   </li>
                   <li className={passwordStrength.hasNumber ? "met" : ""}>
                     <span className="check-icon">
-                      {passwordStrength.hasNumber ? "✓" : "○"}
+                      <i
+                        className={
+                          passwordStrength.hasNumber
+                            ? "bi bi-check-circle-fill"
+                            : "bi bi-circle"
+                        }
+                      ></i>
                     </span>
                     One number (0-9)
                   </li>
                   <li className={passwordStrength.hasSpecialChar ? "met" : ""}>
                     <span className="check-icon">
-                      {passwordStrength.hasSpecialChar ? "✓" : "○"}
+                      <i
+                        className={
+                          passwordStrength.hasSpecialChar
+                            ? "bi bi-check-circle-fill"
+                            : "bi bi-circle"
+                        }
+                      ></i>
                     </span>
                     One special character (@$!%*?&)
                   </li>
@@ -484,6 +441,7 @@ const AddEmployee = () => {
                 className="cancel-btn"
                 onClick={() => navigate(`/branch/${id}`)}
               >
+                <i className="bi bi-x-circle-fill"></i>
                 Cancel
               </button>
               <button type="submit" className="submit-btn" disabled={loading}>
@@ -494,33 +452,7 @@ const AddEmployee = () => {
                   </>
                 ) : (
                   <>
-                    <svg
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
-                      <path
-                        d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                      <path
-                        d="M20 8V14M23 11H17"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
+                    <i className="bi bi-person-plus-fill"></i>
                     Add Employee
                   </>
                 )}

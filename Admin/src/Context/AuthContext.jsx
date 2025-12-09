@@ -26,41 +26,28 @@ export const AuthProvider = ({ children }) => {
 
   const API_URL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api`;
 
-  // Get refresh token from localStorage
-  const getRefreshToken = () => {
-    return localStorage.getItem("refreshToken");
-  };
-
-  // Save refresh token to localStorage
-  const saveRefreshToken = (token) => {
-    localStorage.setItem("refreshToken", token);
-  };
-
-  // Remove refresh token from localStorage
-  const removeRefreshToken = () => {
-    localStorage.removeItem("refreshToken");
-  };
+  // Configure axios to send cookies with requests
+  axios.defaults.withCredentials = true;
 
   // Clear auth state
   const clearAuthState = useCallback(() => {
     setAccessToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    removeRefreshToken();
   }, []);
 
-  // Refresh access token using refresh token
+  // Refresh access token using HTTP-only cookie
   const refreshAccessToken = useCallback(async () => {
     try {
-      const refreshToken = getRefreshToken();
-
-      if (!refreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const response = await axios.post(`${API_URL}/auth/refresh`, {
-        refreshToken,
-      });
+      // No need to send refresh token in body - it's in HTTP-only cookie
+      // Add flag to prevent this request from triggering the interceptor
+      const response = await axios.post(
+        `${API_URL}/auth/refresh`,
+        {},
+        {
+          skipAuthRefresh: true, // Custom flag to skip interceptor
+        }
+      );
 
       if (response.data.success) {
         setAccessToken(response.data.accessToken);
@@ -80,22 +67,15 @@ export const AuthProvider = ({ children }) => {
   // Initialize auth on mount
   useEffect(() => {
     const initAuth = async () => {
-      const refreshToken = getRefreshToken();
-
-      if (refreshToken) {
-        try {
-          console.log("🔄 Attempting to restore session...");
-          await refreshAccessToken();
-          console.log("✅ Session restored successfully");
-          setLoading(false); // Set loading false AFTER successful restoration
-        } catch (error) {
-          console.error("❌ Auto-login failed:", error);
-          clearAuthState();
-          setLoading(false); // Set loading false AFTER clearing state
-        }
-      } else {
-        console.log("ℹ️ No refresh token found");
-        setLoading(false); // Set loading false when no token exists
+      try {
+        console.log("🔄 Attempting to restore session...");
+        await refreshAccessToken();
+        console.log("✅ Session restored successfully");
+      } catch (error) {
+        console.log("ℹ️ No valid session found");
+        clearAuthState();
+      } finally {
+        setLoading(false);
       }
     };
 
@@ -118,6 +98,11 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+
+        // Skip auto-refresh for requests with skipAuthRefresh flag
+        if (originalRequest.skipAuthRefresh) {
+          return Promise.reject(error);
+        }
 
         // If 401 and not already retried, try to refresh token
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -155,7 +140,7 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
-        saveRefreshToken(response.data.refreshToken);
+        // Refresh token is automatically stored in HTTP-only cookie by server
 
         return { success: true };
       } else {
@@ -182,7 +167,7 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
-        saveRefreshToken(response.data.refreshToken);
+        // Refresh token is automatically stored in HTTP-only cookie by server
 
         return { success: true };
       } else {
@@ -212,6 +197,7 @@ export const AuthProvider = ({ children }) => {
           }
         );
       }
+      // Cookie is cleared by server
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
@@ -230,7 +216,7 @@ export const AuthProvider = ({ children }) => {
 
       if (response.data.success) {
         setAccessToken(response.data.accessToken);
-        saveRefreshToken(response.data.refreshToken);
+        // New refresh token is automatically stored in HTTP-only cookie by server
 
         return { success: true, message: "Password updated successfully" };
       }
