@@ -17,20 +17,15 @@ const BranchDetail = () => {
   useEffect(() => {
     if (!accessToken) return;
 
-    // If we have branches in context, find the one we need
     if (branches.length > 0) {
       const foundBranch = branches.find((b) => b._id === id);
       if (foundBranch) {
         setBranch(foundBranch);
         setFormData(foundBranch);
       } else {
-        // If not found in current loaded branches, maybe try fetching again or redirect
-        // Ideally, if branches are loaded but ID not found, it doesn't exist.
-        // But for safety against stale state, we could just say not found.
         navigate("/branch");
       }
     } else {
-      // If no branches loaded yet, fetch them
       getBranches();
     }
   }, [id, branches, accessToken, getBranches, navigate]);
@@ -58,14 +53,13 @@ const BranchDetail = () => {
     try {
       await updateBranch(id, formData);
       setIsEditing(false);
-      // branch state will be updated by useEffect when branches context updates
     } catch (error) {
       console.error("Failed to update branch", error);
     }
   };
 
   const handleCancel = () => {
-    setFormData(branch); // Reset form data to original branch data
+    setFormData(branch);
     setIsEditing(false);
   };
 
