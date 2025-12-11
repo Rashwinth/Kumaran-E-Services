@@ -14,6 +14,7 @@ export const useBranch = () => {
 export const BranchProvider = ({ children }) => {
   const [branches, setBranches] = useState([]);
   const [loading, setLoading] = useState(true);
+  const {user}=useAuth()
   const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/admin`;
   const { accessToken } = useAuth();
 
@@ -24,6 +25,27 @@ export const BranchProvider = ({ children }) => {
     try {
       setLoading(true);
       const response = await axios.get(`${baseURL}/branches`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+
+      if (response.data.success) {
+        setBranches(response.data.data);
+      }
+    } catch (error) {
+      console.error("Error fetching branches:", error);
+      toast.error(error.response?.data?.message || "Failed to fetch branches");
+    } finally {
+      setLoading(false);
+    }
+  }, [accessToken, baseURL]);
+
+
+    const getBranchById = useCallback(async (id) => {
+    if (!accessToken) return;
+
+    try {
+      setLoading(true);
+      const response = await axios.get(`${baseURL}/${user._id}/branches/${id}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
 
@@ -101,6 +123,7 @@ export const BranchProvider = ({ children }) => {
         addBranch,
         updateBranch,
         deleteBranch,
+        getBranchById,
       }}
     >
       {children}

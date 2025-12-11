@@ -17,26 +17,15 @@ import BranchDetail from "./Pages/Branch/BranchDetail";
 import Products from "./Pages/Products";
 
 // Context
-import { AuthProvider, useAuth } from "./Context/AuthContext";
+import { AuthProvider } from "./Context/AuthContext";
 import LoadingPage from "./Components/Loading/LoadingPage";
 import Header from "./Components/Header";
 import Footer from "./Components/Footer";
-import AddEmployee from "./Components/Branch_Components/AddEmployee";
+import AddEmployee from "./Components/Employee/AddEmployee";
+import Employee from "./Pages/Branch/Employee";
+import ProtectedRoute from "./Modals/ProtectedRoute";
 
-// Protected Route Component
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useAuth();
-
-  if (loading) {
-    return <LoadingPage />;
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
-  return children;
-};
+// Protected Route Component (fixed)
 
 // Layout wrapper to conditionally show Header
 const Layout = ({ children }) => {
@@ -61,51 +50,22 @@ function AppContent() {
         <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
         <Routes>
-          {/* Public Routes */}
+          {/* Public */}
           <Route path="/" element={<LoadingPage />} />
           <Route path="/login" element={<Login />} />
 
-          {/* Protected Routes */}
-          <Route
-            path="/dashboard"
-            element={
-              <ProtectedRoute>
-                <Dashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branch"
-            element={
-              <ProtectedRoute>
-                <Branch />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branch/:id"
-            element={
-              <ProtectedRoute>
-                <BranchDetail />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/branch/:id/add-employee"
-            element={
-              <ProtectedRoute>
-                <AddEmployee />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/products"
-            element={
-              <ProtectedRoute>
-                <Products />
-              </ProtectedRoute>
-            }
-          />
+          {/* Protected */}
+          <Route element={<ProtectedRoute />}>
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/branch" element={<Branch />} />
+            <Route path="/branch/:id" element={<BranchDetail />} />{" "}
+            <Route path="/branch/:id/employee" element={<Employee />} />
+            <Route
+              path="/branch/:id/employee/add-employee"
+              element={<AddEmployee />}
+            />
+            <Route path="/products" element={<Products />} />
+          </Route>
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

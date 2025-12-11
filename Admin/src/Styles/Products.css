@@ -6,7 +6,7 @@
   background: #f8fafc;
 }
 
-.products-header {
+.products-container .products-header {
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
@@ -15,20 +15,20 @@
   gap: 1.5rem;
 }
 
-.header-left h1 {
+.products-container .header-left h1 {
   font-size: 2rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 0.5rem 0;
 }
 
-.products-count {
+.products-container .products-count {
   font-size: 1rem;
   color: #64748b;
   margin: 0;
 }
 
-.add-product-btn {
+.products-container .add-product-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -43,17 +43,17 @@
   transition: all 0.3s ease;
 }
 
-.add-product-btn:hover {
+.products-container .add-product-btn:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
 }
 
-.add-product-btn svg {
+.products-container .add-product-btn svg {
   width: 20px;
   height: 20px;
 }
 
-.products-filters {
+.products-container .products-filters {
   background: white;
   border-radius: 12px;
   padding: 1.5rem;
@@ -66,13 +66,13 @@
   border: 1px solid #e2e8f0;
 }
 
-.search-box {
+.products-container .search-box {
   flex: 1;
   min-width: 250px;
   position: relative;
 }
 
-.search-box svg {
+.products-container .search-box svg {
   position: absolute;
   left: 1rem;
   top: 50%;
@@ -82,7 +82,7 @@
   color: #94a3b8;
 }
 
-.search-box input {
+.products-container .search-box input {
   width: 100%;
   padding: 0.75rem 1rem 0.75rem 3rem;
   border: 1px solid #d1d5db;
@@ -91,25 +91,25 @@
   transition: all 0.2s ease;
 }
 
-.search-box input:focus {
+.products-container .search-box input:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.filter-group {
+.products-container .filter-group {
   display: flex;
   align-items: center;
   gap: 0.75rem;
 }
 
-.filter-group label {
+.products-container .filter-group label {
   font-size: 0.9375rem;
   font-weight: 600;
   color: #64748b;
 }
 
-.filter-group select {
+.products-container .filter-group select {
   padding: 0.75rem 1rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
@@ -120,19 +120,19 @@
   min-width: 150px;
 }
 
-.filter-group select:focus {
+.products-container .filter-group select:focus {
   outline: none;
   border-color: #667eea;
   box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
 }
 
-.products-grid {
+.products-container .products-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
   gap: 1.25rem;
 }
 
-.product-card {
+.products-container .product-card {
   background: white;
   border: 1px solid #e2e8f0;
   border-radius: 12px;
@@ -143,20 +143,20 @@
   gap: 1rem;
 }
 
-.product-card:hover {
+.products-container .product-card:hover {
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
   border-color: #cbd5e1;
 }
 
-.product-info h3 {
+.products-container .product-info h3 {
   font-size: 1.25rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 0.5rem 0;
 }
 
-.product-category {
+.products-container .product-category {
   font-size: 0.8125rem;
   color: #64748b;
   margin: 0 0 0.75rem 0;
@@ -165,14 +165,14 @@
   font-weight: 600;
 }
 
-.product-price {
+.products-container .product-price {
   font-size: 1.375rem;
   font-weight: 700;
   color: #10b981;
   margin: 0;
 }
 
-.product-stock {
+.products-container .product-stock {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -181,7 +181,7 @@
   border-bottom: 1px solid #f1f5f9;
 }
 
-.stock-badge {
+.products-container .stock-badge {
   padding: 0.375rem 0.875rem;
   border-radius: 20px;
   font-size: 0.8125rem;
@@ -189,35 +189,35 @@
   text-transform: capitalize;
 }
 
-.stock-badge.in-stock {
+.products-container .stock-badge.in-stock {
   background: #d1fae5;
   color: #065f46;
 }
 
-.stock-badge.low-stock {
+.products-container .stock-badge.low-stock {
   background: #fef3c7;
   color: #92400e;
 }
 
-.stock-badge.out-of-stock {
+.products-container .stock-badge.out-of-stock {
   background: #fee2e2;
   color: #991b1b;
 }
 
-.stock-quantity {
+.products-container .stock-quantity {
   font-size: 0.875rem;
   color: #64748b;
   margin: 0;
   font-weight: 500;
 }
 
-.product-actions {
+.products-container .product-actions {
   display: flex;
   gap: 0.75rem;
 }
 
-.btn-edit,
-.btn-delete {
+.products-container .btn-edit,
+.products-container .btn-delete {
   flex: 1;
   padding: 0.625rem 1rem;
   border: none;
@@ -228,27 +228,27 @@
   transition: all 0.2s ease;
 }
 
-.btn-edit {
+.products-container .btn-edit {
   background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
   color: white;
 }
 
-.btn-edit:hover {
+.products-container .btn-edit:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
 }
 
-.btn-delete {
+.products-container .btn-delete {
   background: #fee2e2;
   color: #dc2626;
 }
 
-.btn-delete:hover {
+.products-container .btn-delete:hover {
   background: #fecaca;
   transform: translateY(-2px);
 }
 
-.no-products {
+.products-container .no-products {
   text-align: center;
   padding: 4rem 2rem;
   background: white;
@@ -256,21 +256,21 @@
   border: 1px solid #e2e8f0;
 }
 
-.no-products svg {
+.products-container .no-products svg {
   width: 64px;
   height: 64px;
   color: #cbd5e1;
   margin-bottom: 1.5rem;
 }
 
-.no-products h3 {
+.products-container .no-products h3 {
   font-size: 1.5rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0 0 0.5rem 0;
 }
 
-.no-products p {
+.products-container .no-products p {
   font-size: 1rem;
   color: #64748b;
   margin: 0;
@@ -282,34 +282,34 @@
     padding: 1rem;
   }
 
-  .products-header {
+  .products-container .products-header {
     flex-direction: column;
   }
 
-  .add-product-btn {
+  .products-container .add-product-btn {
     width: 100%;
     justify-content: center;
   }
 
-  .products-filters {
+  .products-container .products-filters {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .search-box {
+  .products-container .search-box {
     min-width: 100%;
   }
 
-  .filter-group {
+  .products-container .filter-group {
     flex-direction: column;
     align-items: stretch;
   }
 
-  .filter-group select {
+  .products-container .filter-group select {
     width: 100%;
   }
 
-  .products-grid {
+  .products-container .products-grid {
     grid-template-columns: 1fr;
   }
 }

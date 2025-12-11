@@ -1,27 +1,32 @@
+/* Synced with BranchDetail.css and Employee.css theme */
 .add-employee-container {
-  min-height: 100vh;
+  min-height: calc(100vh - 80px); /* Adjust based on header/footer */
   padding: 2rem;
   display: flex;
-  align-items: flex-start;
   justify-content: center;
-}
-
-.add-employee-content {
+  background-color: #f8fafc; /* Slate-50 */
   width: 100%;
-  max-width: 100%;
 }
 
-.add-employee-card {
-  background: transparent;
-  border-radius: 0;
-  padding: 0;
+.add-employee-container .add-employee-content {
+  width: 100%;
+  max-width: 800px; /* Limit width for better readability */
 }
 
-.add-employee-header {
-  margin-bottom: 2rem;
+.add-employee-container .add-employee-card {
+  background: white;
+  border-radius: 12px;
+  padding: 2.5rem;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1),
+    0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  border: 1px solid #e2e8f0;
 }
 
-.back-button {
+.add-employee-container .add-employee-header {
+  margin-bottom: 2.5rem;
+}
+
+.add-employee-container .back-button {
   display: inline-flex;
   align-items: center;
   gap: 0.5rem;
@@ -33,112 +38,124 @@
   transition: color 0.2s ease;
 }
 
-.back-button:hover {
+.add-employee-container .back-button:hover {
   color: #334155;
+  text-decoration: none;
 }
 
-.back-button i {
+.add-employee-container .back-button i {
   font-size: 20px;
 }
 
-.header-title {
+.add-employee-container .header-title {
   display: flex;
   align-items: center;
   gap: 1rem;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.5rem;
 }
 
-.logo-icon {
+/* Using Purple to denote "Creation/Action" context, similar to Branch */
+.add-employee-container .logo-icon {
   width: 48px;
   height: 48px;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background: linear-gradient(
+    135deg,
+    #10b981 0%,
+    #059669 100%
+  ); /* Green to match "Add Employee" context */
   border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
   color: white;
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.25);
 }
 
-.logo-icon i {
+.add-employee-container .logo-icon i {
   font-size: 24px;
 }
 
-.header-title h1 {
+.add-employee-container .header-title h1 {
   font-size: 1.875rem;
   font-weight: 700;
   color: #1e293b;
   margin: 0;
 }
 
-.subtitle {
+.add-employee-container .subtitle {
   color: #64748b;
   font-size: 1rem;
   margin: 0;
+  padding-left: calc(48px + 1rem); /* Align with text start */
 }
 
-.employee-form {
+.add-employee-container .employee-form {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
 }
 
-.form-row {
+.add-employee-container .form-row {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
   gap: 1.5rem;
 }
 
-.form-group {
+.add-employee-container .form-group {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
 }
 
-.form-group.full-width {
+.add-employee-container .form-group.full-width {
   grid-column: 1 / -1;
 }
 
-.form-group label {
+.add-employee-container .form-group label {
   display: flex;
   align-items: center;
   gap: 0.5rem;
   font-weight: 600;
   color: #334155;
-  font-size: 0.9375rem;
+  font-size: 0.875rem;
+  text-transform: uppercase;
+  letter-spacing: 0.025em;
 }
 
-.form-group label i {
-  font-size: 18px;
-  color: #667eea;
+.add-employee-container .form-group label i {
+  font-size: 16px;
+  color: #10b981; /* Green accent for icons */
 }
 
-.form-group input,
-.form-group select {
-  padding: 0.875rem 1rem;
-  border: 1.5px solid #e2e8f0;
+.add-employee-container .form-group input,
+.add-employee-container .form-group select {
+  padding: 0.75rem 1rem;
+  border: 1px solid #cbd5e1;
   border-radius: 8px;
   font-size: 1rem;
   transition: all 0.2s ease;
   font-family: inherit;
+  color: #1e293b;
+  background-color: #fff;
 }
 
-.form-group input:focus,
-.form-group select:focus {
+.add-employee-container .form-group input:focus,
+.add-employee-container .form-group select:focus {
   outline: none;
-  border-color: #667eea;
-  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+  border-color: #10b981;
+  box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.1);
 }
 
-.password-input-wrapper {
+.add-employee-container .password-input-wrapper {
   position: relative;
 }
 
-.password-input-wrapper input {
+.add-employee-container .password-input-wrapper input {
   width: 100%;
   padding-right: 3rem;
 }
 
-.password-toggle {
+.add-employee-container .password-toggle {
   position: absolute;
   right: 1rem;
   top: 50%;
@@ -147,42 +164,43 @@
   border: none;
   cursor: pointer;
   font-size: 1.25rem;
-  padding: 0.25rem;
+  padding: 0;
   display: flex;
   align-items: center;
   justify-content: center;
-  color: #64748b;
+  color: #94a3b8;
+  transition: color 0.2s;
 }
 
-.password-toggle:hover {
-  color: #334155;
+.add-employee-container .password-toggle:hover {
+  color: #475569;
 }
 
-.password-requirements {
+.add-employee-container .password-requirements {
   background: #f8fafc;
   border-radius: 8px;
-  padding: 1rem;
+  padding: 1.25rem;
   border: 1px solid #e2e8f0;
   grid-column: 1 / -1;
 }
 
-.requirements-title {
+.add-employee-container .requirements-title {
   font-size: 0.875rem;
   font-weight: 600;
   color: #334155;
-  margin: 0 0 0.75rem 0;
+  margin: 0 0 1rem 0;
 }
 
-.requirements-list {
+.add-employee-container .requirements-list {
   list-style: none;
   padding: 0;
   margin: 0;
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 0.5rem;
+  gap: 0.75rem;
 }
 
-.requirements-list li {
+.add-employee-container .requirements-list li {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -191,25 +209,27 @@
   transition: color 0.2s ease;
 }
 
-.requirements-list li.met {
+.add-employee-container .requirements-list li.met {
   color: #059669;
 }
 
-.check-icon {
+.add-employee-container .check-icon {
   display: flex;
   align-items: center;
   justify-content: center;
   font-size: 16px;
 }
 
-.form-actions {
+.add-employee-container .form-actions {
   display: flex;
   gap: 1rem;
   margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #f1f5f9;
 }
 
-.cancel-btn,
-.submit-btn {
+.add-employee-container .cancel-btn,
+.add-employee-container .submit-btn {
   flex: 1;
   padding: 0.875rem 1.5rem;
   border: none;
@@ -217,45 +237,51 @@
   font-size: 1rem;
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
 }
 
-.cancel-btn {
-  background: #f3f4f6;
-  color: #374151;
+.add-employee-container .cancel-btn {
+  background: #f1f5f9;
+  color: #475569;
 }
 
-.cancel-btn:hover {
-  background: #e5e7eb;
+.add-employee-container .cancel-btn:hover {
+  background: #e2e8f0;
+  color: #1e293b;
 }
 
-.submit-btn {
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+.add-employee-container .submit-btn {
+  background: linear-gradient(
+    135deg,
+    #10b981 0%,
+    #059669 100%
+  ); /* Green Success */
   color: white;
 }
 
-.submit-btn:hover:not(:disabled) {
+.add-employee-container .submit-btn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
 }
 
-.submit-btn:disabled {
-  opacity: 0.6;
+.add-employee-container .submit-btn:disabled {
+  opacity: 0.7;
   cursor: not-allowed;
+  filter: grayscale(0.5);
 }
 
-.submit-btn i,
-.cancel-btn i {
+.add-employee-container .submit-btn i,
+.add-employee-container .cancel-btn i {
   font-size: 20px;
 }
 
-.spinner {
-  width: 16px;
-  height: 16px;
+.add-employee-container .spinner {
+  width: 20px;
+  height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
   border-top-color: white;
   border-radius: 50%;
@@ -274,23 +300,27 @@
     padding: 1rem;
   }
 
-  .add-employee-card {
-    padding: 0;
+  .add-employee-container .add-employee-card {
+    padding: 1.5rem;
   }
 
-  .header-title h1 {
+  .add-employee-container .header-title h1 {
     font-size: 1.5rem;
   }
 
-  .form-row {
+  .add-employee-container .subtitle {
+    padding-left: 0;
+  }
+
+  .add-employee-container .form-row {
     grid-template-columns: 1fr;
   }
 
-  .requirements-list {
+  .add-employee-container .requirements-list {
     grid-template-columns: 1fr;
   }
 
-  .form-actions {
-    flex-direction: column-reverse;
+  .add-employee-container .form-actions {
+    flex-direction: column-reverse; /* Cancel at bottom on mobile */
   }
 }

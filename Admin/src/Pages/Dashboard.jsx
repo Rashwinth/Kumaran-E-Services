@@ -12,7 +12,7 @@ const Dashboard = () => {
           <div>
             <h1>Welcome back, {user?.name?.split(" ")[0] || "User"}! 👋</h1>
           </div>
-          <Link to="/branch" className="branch-nav-btn">
+          <Link to="/branch" className="branch-nav-btn" style={{textDecoration:"none"}}>
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -278,7 +278,7 @@ const Dashboard = () => {
               <h2>Quick Actions</h2>
             </div>
             <div className="quick-actions">
-              <Link to="/branch" className="action-button">
+              <Link to="/branch" className="action-button" style={{textDecoration:"none"}}>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -301,7 +301,7 @@ const Dashboard = () => {
                 </svg>
                 Manage Branches
               </Link>
-              <button className="action-button">
+              <Link to={"/products"} className="action-button"style={{textDecoration:"none"}}>
                 <svg
                   viewBox="0 0 24 24"
                   fill="none"
@@ -315,8 +315,8 @@ const Dashboard = () => {
                     strokeLinejoin="round"
                   />
                 </svg>
-                Add New Item
-              </button>
+                Manage Products
+              </Link>
               <button className="action-button">
                 <svg
                   viewBox="0 0 24 24"

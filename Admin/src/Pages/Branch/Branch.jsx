@@ -3,6 +3,8 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
 import "../../Styles/Branch.css";
 import { useBranch } from "../../Context/BranchContext";
+import "bootstrap/dist/css/bootstrap.min.css";
+import UniversalDelete from "../../Modals/UniversalDelete";
 
 const Branch = () => {
   const navigate = useNavigate();
@@ -37,6 +39,11 @@ const Branch = () => {
     gstNumber: "",
     status: "Active",
   });
+
+  // Delete Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [branchToDelete, setBranchToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // Load branches on component mount or when access token changes
   useEffect(() => {
@@ -119,16 +126,25 @@ const Branch = () => {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("Are you sure you want to delete this branch?")) {
-      return;
-    }
+  // Open delete modal
+  const handleDeleteClick = (branch) => {
+    setBranchToDelete(branch);
+    setDeleteModalOpen(true);
+  };
+
+  // Confirm delete
+  const confirmDelete = async () => {
+    if (!branchToDelete) return;
 
     try {
-      await deleteBranch(id);
+      setIsDeleting(true);
+      await deleteBranch(branchToDelete._id);
+      setDeleteModalOpen(false);
+      setBranchToDelete(null);
     } catch (error) {
       console.error("Delete error:", error);
-      // Toast is handled in context
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -214,7 +230,7 @@ const Branch = () => {
                 </button>
                 <button
                   className="btn-delete"
-                  onClick={() => handleDelete(branch._id)}
+                  onClick={() => handleDeleteClick(branch)}
                 >
                   <i className="bi bi-trash-fill"></i>
                   Delete
@@ -228,7 +244,11 @@ const Branch = () => {
       {/* Modal */}
       {showModal && (
         <div className="modal-overlay" onClick={handleCloseModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+          <div
+            className="modal-content"
+            style={{ backgroundColor: "white" }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <div className="modal-header">
               <div className="modal-title-wrapper">
                 <i
@@ -469,6 +489,17 @@ const Branch = () => {
           </div>
         </div>
       )}
+
+      {/* Universal Delete Modal */}
+      <UniversalDelete
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onDelete={confirmDelete}
+        title="Delete Branch"
+        message="Are you sure you want to delete this branch? This action cannot be undone and will permanently remove all associated data."
+        itemName={branchToDelete?.name}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

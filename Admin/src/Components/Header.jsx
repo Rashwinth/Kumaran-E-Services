@@ -2,6 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../Context/AuthContext";
 import { Link } from "react-router-dom";
+import "../Styles/Header.css";
 
 const Header = () => {
   const navigate = useNavigate();
@@ -27,8 +28,12 @@ const Header = () => {
             <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" />
           </svg>
         </div>
-        <Link to="/dashboard" className="nav-brand-text ">
-          <span className="text-dark">Kumaran E-Services Admin Console</span>
+        <Link
+          to="/dashboard"
+          className="nav-brand-text text-dark"
+          style={{ textDecoration: "none" }}
+        >
+          <span className="text-dark">KES Admin Console</span>
         </Link>
       </div>
 

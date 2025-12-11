@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import "../Styles/Products.css";
+import UniversalDelete from "../Modals/UniversalDelete";
 
 // Sample products data
 const productsData = [
@@ -187,10 +188,15 @@ const productsData = [
 ];
 
 const Products = () => {
-  const [products] = useState(productsData);
+  const [products, setProducts] = useState(productsData);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
+
+  // Delete Modal State
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false);
+  const [productToDelete, setProductToDelete] = useState(null);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   const categories = ["All", ...new Set(products.map((p) => p.category))];
 
@@ -209,6 +215,24 @@ const Products = () => {
     if (status === "In Stock") return "in-stock";
     if (status === "Low Stock") return "low-stock";
     return "out-of-stock";
+  };
+
+  const handleDeleteClick = (product) => {
+    setProductToDelete(product);
+    setDeleteModalOpen(true);
+  };
+
+  const confirmDelete = async () => {
+    if (!productToDelete) return;
+
+    setIsDeleting(true);
+    // Simulate API call
+    setTimeout(() => {
+      setProducts((prev) => prev.filter((p) => p._id !== productToDelete._id));
+      setDeleteModalOpen(false);
+      setProductToDelete(null);
+      setIsDeleting(false);
+    }, 1000);
   };
 
   return (
@@ -307,7 +331,12 @@ const Products = () => {
             </div>
             <div className="product-actions">
               <button className="btn-edit">Edit</button>
-              <button className="btn-delete">Delete</button>
+              <button
+                className="btn-delete"
+                onClick={() => handleDeleteClick(product)}
+              >
+                Delete
+              </button>
             </div>
           </div>
         ))}
@@ -332,6 +361,17 @@ const Products = () => {
           <p>Try adjusting your search or filters</p>
         </div>
       )}
+
+      {/* Universal Delete Modal */}
+      <UniversalDelete
+        isOpen={deleteModalOpen}
+        onClose={() => setDeleteModalOpen(false)}
+        onDelete={confirmDelete}
+        title="Delete Product"
+        message="Are you sure you want to delete this product? This action cannot be undone."
+        itemName={productToDelete?.name}
+        isLoading={isDeleting}
+      />
     </div>
   );
 };

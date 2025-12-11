@@ -26,7 +26,9 @@ exports.getAllBranches = async (req, res) => {
 // @access  Private (Admin/Manager)
 exports.getBranchById = async (req, res) => {
   try {
-    const branch = await Branch.findById(req.params.id);
+    const { branchId } = req.params;
+
+    const branch = await Branch.findById({ _id: branchId });
 
     if (!branch) {
       return res.status(404).json({

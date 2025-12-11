@@ -48,15 +48,15 @@ const productSchema = new mongoose.Schema(
       cgst: { type: Number, default: 0 },
       sgst: { type: Number, default: 0 },
       isGstApplicable: { type: Boolean, default: true },
-      codeType: {
-        type: String,
-        enum: ["HSN", "SAC"],
-        required: true,
-      },
-      code: {
-        type: String,
-        required: true,
-      },
+      // codeType: {
+      //   type: String,
+      //   enum: ["HSN", "SAC"],
+      //   required: true,
+      // },
+      // code: {
+      //   type: String,
+      //   required: true,
+      // },
     },
 
     // Cost Price

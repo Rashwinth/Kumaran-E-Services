@@ -72,3 +72,60 @@ exports.register = async (req, res) => {
     });
   }
 };
+
+exports.GetEmployee = async (req, res) => {
+  try {
+    const { branchcode } = req.params;
+
+    if (!branchcode) {
+      return res.status(400).json({
+        success: false,
+        message: "Branch Code is required",
+      });
+    }
+
+    const employees = await User.find({ branchCode: branchcode });
+
+    // Return success with empty array if no employees found, frontend handles it.
+    // Or we can return existing format if preferred, but success:true is better for empty lists.
+
+    return res.status(200).json({
+      success: true,
+      employees: employees || [],
+    });
+  } catch (error) {
+    console.error("Get Employees error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during fetching employees",
+    });
+  }
+};
+
+exports.deleteEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const employee = await User.findById(id);
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found",
+      });
+    }
+
+    await User.findByIdAndDelete(id);
+
+    res.status(200).json({
+      success: true,
+      message: "Employee deleted successfully",
+    });
+  } catch (error) {
+    console.error("Delete employee error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error during deletion",
+    });
+  }
+};

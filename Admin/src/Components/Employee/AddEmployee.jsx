@@ -4,30 +4,14 @@ import { toast } from "react-toastify";
 import axios from "axios";
 import "../../Styles/AddEmployee.css";
 import { useAuth } from "../../Context/AuthContext";
-
-// Sample branch data (same as in BranchDetail.jsx)
-const branchesData = [
-  {
-    _id: "1",
-    name: "Main Branch",
-    code: "MB001",
-  },
-  {
-    _id: "2",
-    name: "North Branch",
-    code: "NB002",
-  },
-  {
-    _id: "3",
-    name: "South Branch",
-    code: "SB003",
-  },
-];
+import { useBranch } from "../../Context/BranchContext";
 
 const AddEmployee = () => {
   const { id } = useParams(); // Branch ID
   const navigate = useNavigate();
   const [branch, setBranch] = useState(null);
+  const { branches, getBranches } = useBranch();
+
   const [formData, setFormData] = useState({
     name: "",
     email: "",
@@ -48,18 +32,24 @@ const AddEmployee = () => {
 
   // Fetch branch data on component mount
   useEffect(() => {
-    const foundBranch = branchesData.find((b) => b._id === id);
-    if (foundBranch) {
-      setBranch(foundBranch);
-      setFormData((prev) => ({
-        ...prev,
-        branchCode: foundBranch.code,
-      }));
+    if (!accessToken) return;
+
+    if (branches.length > 0) {
+      const foundBranch = branches.find((b) => b._id === id);
+      if (foundBranch) {
+        setBranch(foundBranch);
+        setFormData((prev) => ({
+          ...prev,
+          branchCode: foundBranch.code,
+          branchId: foundBranch._id,
+        }));
+      } else {
+        navigate("/employee");
+      }
     } else {
-      toast.error("Branch not found");
-      navigate("/branch");
+      getBranches();
     }
-  }, [id, navigate]);
+  }, [id, branches, accessToken, getBranches, navigate]);
 
   // Password strength checker
   const [passwordStrength, setPasswordStrength] = useState({
@@ -178,7 +168,7 @@ const AddEmployee = () => {
 
         // Redirect back to branch detail page
         setTimeout(() => {
-          navigate(`/branch/${id}`);
+          navigate(`/branch/${id}/employee`);
         }, 1500);
       }
     } catch (error) {
@@ -198,9 +188,9 @@ const AddEmployee = () => {
       <div className="add-employee-content">
         <div className="add-employee-card">
           <div className="add-employee-header">
-            <Link to={`/branch/${id}`} className="back-button">
+            <Link to={`/branch/${id}/employee`} className="back-button">
               <i className="bi bi-arrow-left"></i>
-              Back to Branch
+              Back to Employee
             </Link>
             <div className="header-title">
               <div className="logo-icon">

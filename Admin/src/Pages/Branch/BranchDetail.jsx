@@ -87,47 +87,12 @@ const BranchDetail = () => {
           </Link>
           <div className="branch-title">
             <h1>{branch.name}</h1>
+
             <span className={`status-badge ${branch.status.toLowerCase()}`}>
               {branch.status}
             </span>
-          </div>
-        </div>
-        <div className="header-actions">
-          {!isEditing ? (
-            <>
-              <Link
-                to={`/branch/${id}/add-employee`}
-                className="add-employee-button"
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M16 21V19C16 17.9391 15.5786 16.9217 14.8284 16.1716C14.0783 15.4214 13.0609 15 12 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M12 11C14.2091 11 16 9.20914 16 7C16 4.79086 14.2091 3 12 3C9.79086 3 8 4.79086 8 7C8 9.20914 9.79086 11 12 11Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M20 8V14M23 11H17"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Add Employee
-              </Link>
+
+            {!isEditing ? (
               <button
                 className="edit-button"
                 onClick={() => setIsEditing(true)}
@@ -154,15 +119,34 @@ const BranchDetail = () => {
                 </svg>
                 Edit Branch
               </button>
-            </>
-          ) : (
+            ) : (
+              <>
+                <button className="cancel-button" onClick={handleCancel}>
+                  Cancel
+                </button>
+                <button className="save-button" onClick={handleSave}>
+                  Save Changes
+                </button>
+              </>
+            )}
+          </div>
+        </div>
+        <div className="header-actions">
+          {!isEditing && (
             <>
-              <button className="cancel-button" onClick={handleCancel}>
-                Cancel
-              </button>
-              <button className="save-button" onClick={handleSave}>
-                Save Changes
-              </button>
+              <Link
+                to={`/branch/${id}/employee`}
+                className="add-employee-button"
+              >
+                <i className="bi bi-person"></i>
+                Employee
+              </Link>
+              <Link
+                to={`/branch/${id}/products`}
+                className="add-product-button "
+              >
+                <i className="bi bi-box-seam "></i> Products
+              </Link>
             </>
           )}
         </div>

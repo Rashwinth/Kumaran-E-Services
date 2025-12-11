@@ -108,7 +108,7 @@ userSchema.pre("save", async function (next) {
         .model("User")
         .countDocuments({ branchCode: this.branchCode });
       this.employeeId = `${this.branchCode}-EMP${String(count + 1).padStart(
-        4,
+       2,
         "0"
       )}`;
     }

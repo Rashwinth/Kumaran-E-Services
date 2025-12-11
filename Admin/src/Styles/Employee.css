@@ -1,0 +1,405 @@
+/* Synced with BranchDetail.css theme */
+.employee-page-main {
+  padding: 2rem;
+  max-width: 1400px;
+  margin: 0 auto;
+  min-height: 100vh;
+  background-color: #f8fafc; /* Slate-50 */
+}
+
+.employee-page-main .view-employee-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 2rem;
+  padding: 0; /* Remove padding to align with other headers if nested */
+}
+
+.employee-page-main .header-title-section {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.employee-page-main .header-icon {
+  width: 48px;
+  height: 48px;
+  background: linear-gradient(
+    135deg,
+    #667eea 0%,
+    #764ba2 100%
+  ); /* Primary Purple Sync */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 1.5rem;
+  box-shadow: 0 4px 6px rgba(102, 126, 234, 0.25);
+}
+
+.employee-page-main .header-left {
+  flex: 1;
+}
+
+.employee-page-main .back-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: #64748b;
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9375rem;
+  transition: color 0.2s ease;
+}
+
+.employee-page-main .back-button:hover {
+  color: #334155;
+  text-decoration: none;
+}
+
+.employee-page-main .back-button svg {
+  width: 20px;
+  height: 20px;
+}
+
+.employee-page-main .header-title-section h1 {
+  margin: 0;
+  font-size: 1.875rem; /* ~30px, close to 2rem */
+  color: #1e293b; /* Slate-800 */
+  font-weight: 700;
+}
+
+.employee-page-main .subtitle {
+  margin: 0.25rem 0 0;
+  color: #64748b; /* Slate-500 */
+  font-size: 0.9rem;
+}
+
+.employee-page-main .add-btn {
+  background: linear-gradient(
+    135deg,
+    #10b981 0%,
+    #059669 100%
+  ); /* Green Success Sync */
+  color: white;
+  border: none;
+  padding: 0.75rem 1.5rem;
+  border-radius: 8px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  font-size: 1rem;
+}
+
+.employee-page-main .add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
+}
+
+/* Grid Layout for Cards */
+.employee-page-main .employees-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+  gap: 1.5rem;
+}
+
+.employee-page-main .employee-card {
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05),
+    0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  border: 1px solid #e2e8f0;
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  overflow: hidden;
+}
+
+.employee-page-main .employee-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 24px -6px rgba(0, 0, 0, 0.1),
+    0 4px 8px -2px rgba(0, 0, 0, 0.05);
+  border-color: #cbd5e1;
+}
+
+/* Decorative top bar for card */
+.employee-page-main .employee-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.employee-page-main .employee-card:hover::before {
+  opacity: 1;
+}
+
+.employee-page-main .card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+}
+
+.employee-page-main .employee-identity {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+}
+
+.employee-page-main .employee-avatar {
+  width: 56px;
+  height: 56px;
+  background: linear-gradient(135deg, #f1f5f9 0%, #e2e8f0 100%);
+  color: #64748b;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 1.5rem;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+  border: 1px solid #fff;
+}
+
+.employee-page-main .employee-name {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 0.25rem;
+  line-height: 1.2;
+}
+
+.employee-page-main .card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1rem;
+  background: #f8fafc;
+  border-radius: 12px;
+  border: 1px solid #f1f5f9;
+}
+
+.employee-page-main .info-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  color: #475569;
+  font-size: 0.9375rem;
+  font-weight: 500;
+}
+
+.employee-page-main .info-row i {
+  color: #8b5cf6; /* Soft Purple accent */
+  font-size: 1.1rem;
+  width: 24px;
+  display: flex;
+  justify-content: center;
+}
+
+.employee-page-main .card-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: auto;
+  padding-top: 0.5rem;
+}
+
+/* Badges */
+.employee-page-main .role-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-flex;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  border: 1px solid transparent;
+}
+
+.employee-page-main .role-badge.manager {
+  background-color: #e0e7ff;
+  color: #4338ca;
+  border-color: #c7d2fe;
+}
+
+.employee-page-main .role-badge.staff {
+  background-color: #f1f5f9;
+  color: #475569;
+  border-color: #e2e8f0;
+}
+
+.employee-page-main .status-badge {
+  padding: 0.375rem 1rem;
+  border-radius: 8px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+}
+
+.employee-page-main .status-badge::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: currentColor;
+}
+
+.employee-page-main .status-badge.active {
+  background-color: #ecfdf5;
+  color: #059669;
+  border: 1px solid #d1fae5;
+}
+
+.employee-page-main .status-badge.inactive {
+  background-color: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fee2e2;
+}
+
+/* Action Buttons */
+.employee-page-main .action-buttons {
+  display: flex;
+  gap: 1rem;
+  width: 100%;
+}
+
+.employee-page-main .action-btn {
+  flex: 1;
+  width: auto;
+  height: auto;
+  padding: 0.5rem 1rem;
+  border-radius: 8px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+  font-size: 1rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.employee-page-main .edit-btn {
+  background-color: #fff;
+  color: #0b2af5;
+  border: 1px solid #0b2af5;
+}
+
+.employee-page-main .edit-btn:hover {
+  background-color: #fffbeb;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(11, 11, 245, 0.2);
+}
+
+.employee-page-main .delete-btn {
+  background-color: #fff;
+  color: #ef4444;
+  border: 1px solid #fca5a5;
+}
+
+.employee-page-main .delete-btn:hover {
+  background-color: #fef2f2;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px -1px rgba(239, 68, 68, 0.2);
+}
+
+.employee-page-main .no-employees {
+  grid-column: 1 / -1;
+  text-align: center;
+  padding: 6rem 2rem;
+  background: white;
+  border-radius: 16px;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+  border: 1px dashed #cbd5e1;
+}
+
+.employee-page-main .no-employees i {
+  font-size: 4rem;
+  margin-bottom: 1.5rem;
+  display: block;
+  opacity: 0.8;
+  color: #94a3b8;
+  background: #f1f5f9;
+  width: 100px;
+  height: 100px;
+  line-height: 100px;
+  border-radius: 50%;
+  margin-left: auto;
+  margin-right: auto;
+}
+
+.employee-page-main .no-employees h3 {
+  font-size: 1.5rem;
+  color: #1e293b;
+  margin-bottom: 0.5rem;
+  font-weight: 700;
+}
+
+.employee-page-main .no-employees p {
+  color: #64748b;
+  font-size: 1.125rem;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .employee-page-main {
+    padding: 1rem;
+  }
+
+  .employee-page-main .view-employee-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .employee-page-main .add-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .employee-page-main .employees-table {
+    display: block;
+    overflow-x: auto;
+  }
+}
+
+.employee-page-main .loading-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 4rem;
+  color: #64748b;
+  gap: 1rem;
+}
+
+.employee-page-main .loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid #e2e8f0;
+  border-top-color: #667eea;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}

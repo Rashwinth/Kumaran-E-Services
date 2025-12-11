@@ -1,13 +1,18 @@
 const express = require("express");
 const router = express.Router();
 const { protect, authorize } = require("../middleware/auth");
-const { register } = require("../controller/EmployeeController");
+const {
+  register,
+  GetEmployee,
+  deleteEmployee,
+} = require("../controller/EmployeeController");
 const {
   getAllBranches,
   createBranch,
   updateBranch,
   deleteBranch,
   getBranchStats,
+  getBranchById,
 } = require("../controller/BranchController");
 
 // Public routes
@@ -31,9 +36,22 @@ router.get(
   getBranchStats
 );
 router.get("/branches", protect, authorize("admin", "manager"), getAllBranches);
-
+router.get(
+  "/:id/branches/:branchId",
+  protect,
+  authorize("admin", "manager"),
+  getBranchById
+);
 router.post("/branches", protect, authorize("admin"), createBranch);
 router.put("/branches/:id", protect, authorize("admin"), updateBranch);
 router.delete("/branches/:id", protect, authorize("admin"), deleteBranch);
+
+router.get(
+  "/:id/employees/:branchcode",
+  protect,
+  authorize("admin"),
+  GetEmployee
+);
+router.delete("/employees/:id", protect, authorize("admin"), deleteEmployee);
 
 module.exports = router;
