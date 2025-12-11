@@ -258,11 +258,17 @@
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-size: 0.75rem;
-  font-weight: 600;
+  font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;
-  background-color: rgb(2, 255, 2);
-  
+  letter-spacing: 0.05em;  
+}
+.status-badge.active {
+  background: #abffd4;
+  color: #000000;
+}
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
 }
 
 .branch-detail-container .analytics-icon {
