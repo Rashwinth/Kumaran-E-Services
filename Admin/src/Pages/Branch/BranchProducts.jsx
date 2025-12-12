@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
-import "../Styles/Products.css";
-import UniversalDelete from "../Modals/UniversalDelete";
+import "../../Styles/Products.css";
+import UniversalDelete from "../../Modals/UniversalDelete";
 
 // Sample products data
 const productsData = [
@@ -187,7 +187,7 @@ const productsData = [
   },
 ];
 
-const Products = () => {
+const BranchProducts = () => {
   const [products, setProducts] = useState(productsData);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
@@ -239,7 +239,8 @@ const Products = () => {
     <div className="products-container">
       <div className="products-header">
         <div className="header-left">
-          <h1>Products Management</h1>
+            
+                      <h1>Products Management</h1>
           <p className="products-count">
             {filteredProducts.length} products found
           </p>
@@ -320,8 +321,14 @@ const Products = () => {
               <h3>{product.name}</h3>
               <p className="product-category">{product.category}</p>
               <p className="product-price">
-              ₹{product.price}/{product.unit}
+                ₹{product.price}/{product.unit}
               </p>
+            </div>
+            <div className="product-stock">
+              <span className={`stock-badge ${getStockClass(product.status)}`}>
+                {product.status}
+              </span>
+              <p className="stock-quantity">{product.stock} units</p>
             </div>
             <div className="product-actions">
               <button className="btn-edit">Edit</button>
@@ -370,4 +377,4 @@ const Products = () => {
   );
 };
 
-export default Products;
+export default BranchProducts;

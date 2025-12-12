@@ -14,6 +14,7 @@ const branchSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    password: { type: String, trim: true },
     address: {
       street: { type: String, trim: true },
       city: { type: String, trim: true },

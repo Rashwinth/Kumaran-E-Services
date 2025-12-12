@@ -48,22 +48,6 @@ const productSchema = new mongoose.Schema(
       cgst: { type: Number, default: 0 },
       sgst: { type: Number, default: 0 },
       isGstApplicable: { type: Boolean, default: true },
-      // codeType: {
-      //   type: String,
-      //   enum: ["HSN", "SAC"],
-      //   required: true,
-      // },
-      // code: {
-      //   type: String,
-      //   required: true,
-      // },
-    },
-
-    // Cost Price
-    costPrice: {
-      type: Number,
-      required: true,
-      min: 0,
     },
 
     mrp: {
@@ -71,13 +55,10 @@ const productSchema = new mongoose.Schema(
       required: true,
       min: 0,
     },
-
-    // Selling Price
-    sellingPrice: {
-      type: Number,
-      required: true,
-      min: 0,
-    },
+    tags: [{ type: String, trim: true, index: true }],
+    compatibleModels: [{ type: String, trim: true, index: true }],
+    brand: { type: String, trim: true, index: true },
+    model: { type: String, trim: true, index: true },
 
     // Status
     isActive: {

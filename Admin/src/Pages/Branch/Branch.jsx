@@ -19,8 +19,6 @@ const Branch = () => {
   } = useBranch();
 
   const [showModal, setShowModal] = useState(false);
-  const [modalMode, setModalMode] = useState("add"); // 'add' or 'edit'
-  const [selectedBranch, setSelectedBranch] = useState(null);
   const [submitting, setSubmitting] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
@@ -38,7 +36,27 @@ const Branch = () => {
     },
     gstNumber: "",
     status: "Active",
+    password: "",
   });
+
+  const validatePassword = (password) => {
+    if (!password) return null; // Allow empty details for validation logic if optional, but checks inside handleSubmit will enforce requirements
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
+
+    if (!hasUpperCase)
+      return "Password must contain at least one uppercase letter";
+    if (!hasLowerCase)
+      return "Password must contain at least one lowercase letter";
+    if (!hasNumber) return "Password must contain at least one number";
+    if (!hasSpecialChar)
+      return "Password must contain at least one special character";
+    return null;
+  };
 
   // Delete Modal State
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
@@ -50,30 +68,25 @@ const Branch = () => {
     if (accessToken) getBranches();
   }, [accessToken, getBranches]);
 
-  const handleOpenModal = (mode, branch = null) => {
-    setModalMode(mode);
-    setSelectedBranch(branch);
-    if (branch) {
-      setFormData(branch);
-    } else {
-      setFormData({
-        name: "",
-        code: "",
-        address: {
-          street: "",
-          city: "",
-          state: "",
-          country: "India",
-          pincode: "",
-        },
-        contact: {
-          phone: "",
-          email: "",
-        },
-        gstNumber: "",
-        status: "Active",
-      });
-    }
+  const handleOpenModal = () => {
+    setFormData({
+      name: "",
+      code: "",
+      address: {
+        street: "",
+        city: "",
+        state: "",
+        country: "India",
+        pincode: "",
+      },
+      contact: {
+        phone: "",
+        email: "",
+      },
+      gstNumber: "",
+      status: "Active",
+      password: "",
+    });
     setShowModal(true);
   };
 
@@ -83,7 +96,6 @@ const Branch = () => {
 
   const handleCloseModal = () => {
     setShowModal(false);
-    setSelectedBranch(null);
   };
 
   const handleInputChange = (e) => {
@@ -111,13 +123,17 @@ const Branch = () => {
     try {
       setSubmitting(true);
 
-      if (modalMode === "add") {
-        await addBranch(formData);
-        handleCloseModal();
-      } else if (modalMode === "edit") {
-        await updateBranch(selectedBranch._id, formData);
-        handleCloseModal();
+      const passwordError = formData.password
+        ? validatePassword(formData.password)
+        : null;
+
+      if (passwordError) {
+        alert(passwordError); // Ideally replace with a proper toast or inline error
+        return; // Don't proceed
       }
+
+      await addBranch(formData);
+      handleCloseModal();
     } catch (error) {
       console.error("Submit error:", error);
       // Toast is handled in context
@@ -152,10 +168,7 @@ const Branch = () => {
     <div className="branch-container">
       <div className="branch-header">
         <h1>Branch Management</h1>
-        <button
-          className="add-branch-btn"
-          onClick={() => handleOpenModal("add")}
-        >
+        <button className="add-branch-btn" onClick={handleOpenModal}>
           <i className="bi bi-plus-circle-fill"></i>
           Add New Branch
         </button>
@@ -251,16 +264,8 @@ const Branch = () => {
           >
             <div className="modal-header">
               <div className="modal-title-wrapper">
-                <i
-                  className={`bi ${
-                    modalMode === "add"
-                      ? "bi-building-fill-add"
-                      : "bi-pencil-square"
-                  }`}
-                ></i>
-                <h2>
-                  {modalMode === "add" ? "Add New Branch" : "Edit Branch"}
-                </h2>
+                <i className="bi bi-building-fill-add"></i>
+                <h2>Add New Branch</h2>
               </div>
               <button className="close-btn" onClick={handleCloseModal}>
                 <i className="bi bi-x-lg"></i>
@@ -456,6 +461,38 @@ const Branch = () => {
                     </div>
                   </div>
                 </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">
+                    <i className="bi bi-shield-lock-fill"></i>
+                    Security
+                  </h3>
+                  <div className="form-group">
+                    <label>
+                      <i className="bi bi-key-fill"></i>
+                      Password *
+                    </label>
+                    <input
+                      type="password"
+                      name="password"
+                      value={formData.password}
+                      onChange={handleInputChange}
+                      placeholder="Enter password"
+                      title="Must contain at least one uppercase, one lowercase, one number, and one special character"
+                      required
+                    />
+                    <small
+                      className="text-muted"
+                      style={{
+                        fontSize: "0.8rem",
+                        display: "block",
+                        marginTop: "5px",
+                      }}
+                    >
+                      1 uppercase, 1 lowercase, 1 number, 1 special char
+                    </small>
+                  </div>
+                </div>
               </div>
 
               <div className="modal-footer">
@@ -475,12 +512,12 @@ const Branch = () => {
                   {submitting ? (
                     <>
                       <span className="spinner"></span>
-                      {modalMode === "add" ? "Adding..." : "Updating..."}
+                      Adding...
                     </>
                   ) : (
                     <>
                       <i className="bi bi-check-circle-fill"></i>
-                      {modalMode === "add" ? "Add Branch" : "Update Branch"}
+                      Add Branch
                     </>
                   )}
                 </button>

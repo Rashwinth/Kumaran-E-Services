@@ -58,12 +58,31 @@ exports.getBranchById = async (req, res) => {
   }
 };
 
+// Helper to validate password
+const validatePassword = (password) => {
+  const hasUpperCase = /[A-Z]/.test(password);
+  const hasLowerCase = /[a-z]/.test(password);
+  const hasNumber = /\d/.test(password);
+  // Basic special char check
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(password);
+
+  if (!hasUpperCase)
+    return "Password must contain at least one uppercase letter";
+  if (!hasLowerCase)
+    return "Password must contain at least one lowercase letter";
+  if (!hasNumber) return "Password must contain at least one number";
+  if (!hasSpecialChar)
+    return "Password must contain at least one special character";
+  return null;
+};
+
 // @desc    Create new branch
 // @route   POST /admin/branches
 // @access  Private (Admin only)
 exports.createBranch = async (req, res) => {
   try {
-    const { name, code, address, contact, gstNumber, status } = req.body;
+    const { name, code, address, contact, gstNumber, status, password } =
+      req.body;
 
     // Validate required fields
     if (!name || !code || !contact?.phone) {
@@ -71,6 +90,17 @@ exports.createBranch = async (req, res) => {
         success: false,
         message: "Please provide name, code, and phone number",
       });
+    }
+
+    // Validate password if provided
+    if (password) {
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return res.status(400).json({
+          success: false,
+          message: passwordError,
+        });
+      }
     }
 
     // Check if branch code already exists
@@ -89,6 +119,7 @@ exports.createBranch = async (req, res) => {
       contact,
       gstNumber,
       status: status || "Active",
+      password, // Save password (plain text as per current schema/request)
     });
 
     res.status(201).json({
@@ -126,7 +157,8 @@ exports.createBranch = async (req, res) => {
 // @access  Private (Admin only)
 exports.updateBranch = async (req, res) => {
   try {
-    const { name, code, address, contact, gstNumber, status } = req.body;
+    const { name, code, address, contact, gstNumber, status, password } =
+      req.body;
 
     let branch = await Branch.findById(req.params.id);
 
@@ -150,6 +182,18 @@ exports.updateBranch = async (req, res) => {
           message: "Branch code already exists",
         });
       }
+    }
+
+    // Update password if provided
+    if (password && password.trim() !== "") {
+      const passwordError = validatePassword(password);
+      if (passwordError) {
+        return res.status(400).json({
+          success: false,
+          message: passwordError,
+        });
+      }
+      branch.password = password;
     }
 
     // Update fields

@@ -21,9 +21,11 @@ import { AuthProvider } from "./Context/AuthContext";
 import LoadingPage from "./Components/Loading/LoadingPage";
 import Header from "./Components/Header";
 import Footer from "./Components/Footer";
-import AddEmployee from "./Components/Employee/AddEmployee";
+// import AddEmployee from "./Components/Employee/AddEmployee";
 import Employee from "./Pages/Branch/Employee";
 import ProtectedRoute from "./Modals/ProtectedRoute";
+import BranchProducts from "./Pages/Branch/BranchProducts";
+import AddEmployeeModal from "./Components/Employee/AddEmployee";
 
 // Protected Route Component (fixed)
 
@@ -62,9 +64,10 @@ function AppContent() {
             <Route path="/branch/:id/employee" element={<Employee />} />
             <Route
               path="/branch/:id/employee/add-employee"
-              element={<AddEmployee />}
+              element={<AddEmployeeModal />}
             />
             <Route path="/products" element={<Products />} />
+            <Route path="/branch/:id/products" element={<BranchProducts />} />
           </Route>
 
           {/* Fallback */}

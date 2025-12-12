@@ -152,7 +152,7 @@ const ViewEmployee = ({ BranchCode }) => {
               <div className="card-footer">
                 <div className="action-buttons">
                   <button className="action-btn edit-btn" title="Edit">
-                    <i className="bi bi-pencil-fill"></i> Edit
+                    <i className="bi bi-pencil-square fw-bold fs-5"></i> Edit
                   </button>
                   <button
                     className="action-btn delete-btn"

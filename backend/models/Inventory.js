@@ -19,6 +19,22 @@ const inventorySchema = new mongoose.Schema(
       default: 0,
       min: 0,
     },
+    costPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    // Selling Price
+    sellingPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+    FinalPrice: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
     lowStockThreshold: {
       type: Number,
       default: 5,

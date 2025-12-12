@@ -14,6 +14,25 @@ const BranchDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
 
+  const validatePassword = (password) => {
+    if (!password) return null; // Optional for edit
+    const hasUpperCase = /[A-Z]/.test(password);
+    const hasLowerCase = /[a-z]/.test(password);
+    const hasNumber = /\d/.test(password);
+    const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+      password
+    );
+
+    if (!hasUpperCase)
+      return "Password must contain at least one uppercase letter";
+    if (!hasLowerCase)
+      return "Password must contain at least one lowercase letter";
+    if (!hasNumber) return "Password must contain at least one number";
+    if (!hasSpecialChar)
+      return "Password must contain at least one special character";
+    return null;
+  };
+
   useEffect(() => {
     if (!accessToken) return;
 
@@ -21,7 +40,7 @@ const BranchDetail = () => {
       const foundBranch = branches.find((b) => b._id === id);
       if (foundBranch) {
         setBranch(foundBranch);
-        setFormData(foundBranch);
+        setFormData({ ...foundBranch, password: "" }); // Initialize password as empty string
       } else {
         navigate("/branch");
       }
@@ -51,6 +70,15 @@ const BranchDetail = () => {
 
   const handleSave = async () => {
     try {
+      const passwordError = formData.password
+        ? validatePassword(formData.password)
+        : null;
+
+      if (passwordError) {
+        alert(passwordError);
+        return;
+      }
+
       await updateBranch(id, formData);
       setIsEditing(false);
     } catch (error) {
@@ -59,7 +87,10 @@ const BranchDetail = () => {
   };
 
   const handleCancel = () => {
-    setFormData(branch);
+    const handleCancel = () => {
+      setFormData({ ...branch, password: "" });
+      setIsEditing(false);
+    };
     setIsEditing(false);
   };
 
@@ -316,117 +347,38 @@ const BranchDetail = () => {
           </div>
         </div>
 
-        <div className="detail-section">
-          <h2>Branch Analytics</h2>
-          <div className="analytics-grid">
-            <div className="analytics-card">
-              <div className="analytics-icon revenue">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
+        {isEditing && (
+          <div className="detail-section">
+            <h2>Security</h2>
+            <div className="detail-grid">
+              <div className="detail-item full-width">
+                <label>Update Password (Leave blank to keep current)</label>
+                <input
+                  type="password"
+                  name="password"
+                  value={formData.password || ""}
+                  onChange={handleInputChange}
+                  placeholder="Enter new password"
+                  title="Must contain at least one uppercase, one lowercase, one number, and one special character"
+                />
+                <small
+                  className="text-muted"
+                  style={{
+                    fontSize: "0.8rem",
+                    display: "block",
+                    marginTop: "5px",
+                  }}
                 >
-                  <path
-                    d="M12 2V22M17 5H9.5C8.57174 5 7.6815 5.36875 7.02513 6.02513C6.36875 6.6815 6 7.57174 6 8.5C6 9.42826 6.36875 10.3185 7.02513 10.9749C7.6815 11.6313 8.57174 12 9.5 12H14.5C15.4283 12 16.3185 12.3687 16.9749 13.0251C17.6313 13.6815 18 14.5717 18 15.5C18 16.4283 17.6313 17.3185 16.9749 17.9749C16.3185 18.6313 15.4283 19 14.5 19H6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="analytics-info">
-                <h3>Today's Revenue</h3>
-                <p className="analytics-value">₹45,678</p>
-                <span className="analytics-change positive">
-                  +12% from yesterday
-                </span>
-              </div>
-            </div>
-
-            <div className="analytics-card">
-              <div className="analytics-icon orders">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M21 16V8C20.9996 7.64927 20.9071 7.30481 20.7315 7.00116C20.556 6.69751 20.3037 6.44536 20 6.27L13 2.27C12.696 2.09446 12.3511 2.00205 12 2.00205C11.6489 2.00205 11.304 2.09446 11 2.27L4 6.27C3.69626 6.44536 3.44398 6.69751 3.26846 7.00116C3.09294 7.30481 3.00036 7.64927 3 8V16C3.00036 16.3507 3.09294 16.6952 3.26846 16.9988C3.44398 17.3025 3.69626 17.5546 4 17.73L11 21.73C11.304 21.9055 11.6489 21.9979 12 21.9979C12.3511 21.9979 12.696 21.9055 13 21.73L20 17.73C20.3037 17.5546 20.556 17.3025 20.7315 16.9988C20.9071 16.6952 20.9996 16.3507 21 16Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="analytics-info">
-                <h3>Total Bills</h3>
-                <p className="analytics-value">124</p>
-                <span className="analytics-change positive">
-                  +8% from yesterday
-                </span>
-              </div>
-            </div>
-
-            <div className="analytics-card">
-              <div className="analytics-icon customers">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M17 21V19C17 17.9391 16.5786 16.9217 15.8284 16.1716C15.0783 15.4214 14.0609 15 13 15H5C3.93913 15 2.92172 15.4214 2.17157 16.1716C1.42143 16.9217 1 17.9391 1 19V21"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M9 11C11.2091 11 13 9.20914 13 7C13 4.79086 11.2091 3 9 3C6.79086 3 5 4.79086 5 7C5 9.20914 6.79086 11 9 11Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="analytics-info">
-                <h3>Active Customers</h3>
-                <p className="analytics-value">342</p>
-                <span className="analytics-change neutral">No change</span>
-              </div>
-            </div>
-
-            <div className="analytics-card">
-              <div className="analytics-icon inventory">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M21 16V8C20.9996 7.64927 20.9071 7.30481 20.7315 7.00116C20.556 6.69751 20.3037 6.44536 20 6.27L13 2.27C12.696 2.09446 12.3511 2.00205 12 2.00205C11.6489 2.00205 11.304 2.09446 11 2.27L4 6.27C3.69626 6.44536 3.44398 6.69751 3.26846 7.00116C3.09294 7.30481 3.00036 7.64927 3 8V16C3.00036 16.3507 3.09294 16.6952 3.26846 16.9988C3.44398 17.3025 3.69626 17.5546 4 17.73L11 21.73C11.304 21.9055 11.6489 21.9979 12 21.9979C12.3511 21.9979 12.696 21.9055 13 21.73L20 17.73C20.3037 17.5546 20.556 17.3025 20.7315 16.9988C20.9071 16.6952 20.9996 16.3507 21 16Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-              </div>
-              <div className="analytics-info">
-                <h3>Inventory Items</h3>
-                <p className="analytics-value">1,245</p>
-                <span className="analytics-change negative">
-                  -3% from last week
-                </span>
+                  1 uppercase, 1 lowercase, 1 number, 1 special char
+                </small>
               </div>
             </div>
           </div>
-        </div>
+        )}
 
-        <div className="detail-section">
+    
+
+        {/* <div className="detail-section">
           <div className="section-header">
             <h2>Branch Products</h2>
             <Link to="/products" className="view-all-link">
@@ -530,7 +482,7 @@ const BranchDetail = () => {
               </div>
             </div>
           </div>
-        </div>
+        </div> */}
       </div>
     </div>
   );
