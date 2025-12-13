@@ -26,6 +26,7 @@ import Employee from "./Pages/Branch/Employee";
 import ProtectedRoute from "./Modals/ProtectedRoute";
 import BranchProducts from "./Pages/Branch/BranchProducts";
 import AddEmployeeModal from "./Components/Employee/AddEmployee";
+import AccountManagement from "./Pages/Branch/Accounts";
 
 // Protected Route Component (fixed)
 
@@ -59,15 +60,25 @@ function AppContent() {
           {/* Protected */}
           <Route element={<ProtectedRoute />}>
             <Route path="/dashboard" element={<Dashboard />} />
+
+            {/* Brabch Routes */}
             <Route path="/branch" element={<Branch />} />
-            <Route path="/branch/:id" element={<BranchDetail />} />{" "}
+            <Route path="/branch/:id" element={<BranchDetail />} />
+
+            {/* Employee route */}
             <Route path="/branch/:id/employee" element={<Employee />} />
             <Route
               path="/branch/:id/employee/add-employee"
               element={<AddEmployeeModal />}
             />
+
+            {/* product Route */}
             <Route path="/products" element={<Products />} />
             <Route path="/branch/:id/products" element={<BranchProducts />} />
+
+            {/* Accounts Route */}
+            <Route path="/branch/:id/accounts" element={<AccountManagement />} />
+            <Route path="/accounts" element={<AccountManagement />} />
           </Route>
 
           {/* Fallback */}

@@ -323,6 +323,7 @@
   transition: all 0.2s ease;
   font-family: "Inter", sans-serif;
   font-size: 0.9375rem;
+  text-decoration: none;
 }
 
 .dashboard-container .action-button:hover {

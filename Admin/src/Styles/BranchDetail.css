@@ -88,7 +88,7 @@
   height: 18px;
 }
 
-.branch-detail-container .add-product-button {
+/* .branch-detail-container .add-product-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -108,9 +108,11 @@
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(185, 16, 16, 0.4);
   color: white;
-}
+} */
 
-.branch-detail-container .add-employee-button {
+.branch-detail-container .add-employee-button,
+.branch-detail-container .add-account-button,
+.branch-detail-container .add-product-button {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -126,14 +128,17 @@
   text-decoration: none;
 }
 
-.branch-detail-container .add-employee-button:hover {
+.branch-detail-container .add-employee-button:hover,
+.branch-detail-container .add-account-button:hover,
+.branch-detail-container .add-product-button:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 16px rgba(16, 185, 129, 0.4);
   color: white;
 }
 
 .branch-detail-container .add-employee-button i,
-.branch-detail-container .add-product-button i {
+.branch-detail-container .add-product-button i,
+.branch-detail-container .add-account-button i {
   width: 20px;
   height: 20px;
   font-size: 25px;
@@ -253,13 +258,13 @@
   transform: translateY(-4px);
   box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
 }
-.status-badge{
+.status-badge {
   padding: 0.25rem 0.5rem;
   border-radius: 6px;
   font-size: 0.75rem;
   font-weight: 700;
   text-transform: uppercase;
-  letter-spacing: 0.05em;  
+  letter-spacing: 0.05em;
 }
 .status-badge.active {
   background: #abffd4;

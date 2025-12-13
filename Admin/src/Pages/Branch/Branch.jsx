@@ -36,25 +36,25 @@ const Branch = () => {
     },
     gstNumber: "",
     status: "Active",
-    password: "",
+    AccessCode: "",
   });
 
-  const validatePassword = (password) => {
-    if (!password) return null; // Allow empty details for validation logic if optional, but checks inside handleSubmit will enforce requirements
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
+  const validateAccessCode = (AccessCode) => {
+    if (!AccessCode) return null; // Allow empty details for validation logic if optional, but checks inside handleSubmit will enforce requirements
+    const hasUpperCase = /[A-Z]/.test(AccessCode);
+    const hasLowerCase = /[a-z]/.test(AccessCode);
+    const hasNumber = /\d/.test(AccessCode);
     const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
-      password
+      AccessCode
     );
 
     if (!hasUpperCase)
-      return "Password must contain at least one uppercase letter";
+      return "AccessCode must contain at least one uppercase letter";
     if (!hasLowerCase)
-      return "Password must contain at least one lowercase letter";
-    if (!hasNumber) return "Password must contain at least one number";
+      return "AccessCode must contain at least one lowercase letter";
+    if (!hasNumber) return "AccessCode must contain at least one number";
     if (!hasSpecialChar)
-      return "Password must contain at least one special character";
+      return "AccessCode must contain at least one special character";
     return null;
   };
 
@@ -85,7 +85,7 @@ const Branch = () => {
       },
       gstNumber: "",
       status: "Active",
-      password: "",
+      AccessCode: "",
     });
     setShowModal(true);
   };
@@ -123,12 +123,12 @@ const Branch = () => {
     try {
       setSubmitting(true);
 
-      const passwordError = formData.password
-        ? validatePassword(formData.password)
+      const AccessCodeError = formData.AccessCode
+        ? validateAccessCode(formData.AccessCode)
         : null;
 
-      if (passwordError) {
-        alert(passwordError); // Ideally replace with a proper toast or inline error
+      if (AccessCodeError) {
+        alert(AccessCodeError); // Ideally replace with a proper toast or inline error
         return; // Don't proceed
       }
 
@@ -470,14 +470,14 @@ const Branch = () => {
                   <div className="form-group">
                     <label>
                       <i className="bi bi-key-fill"></i>
-                      Password *
+                      AccessCode *
                     </label>
                     <input
-                      type="password"
-                      name="password"
-                      value={formData.password}
+                      type="AccessCode"
+                      name="AccessCode"
+                      value={formData.AccessCode}
                       onChange={handleInputChange}
-                      placeholder="Enter password"
+                      placeholder="Enter AccessCode"
                       title="Must contain at least one uppercase, one lowercase, one number, and one special character"
                       required
                     />

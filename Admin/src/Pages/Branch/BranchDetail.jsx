@@ -14,22 +14,22 @@ const BranchDetail = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [formData, setFormData] = useState(null);
 
-  const validatePassword = (password) => {
-    if (!password) return null; // Optional for edit
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasLowerCase = /[a-z]/.test(password);
-    const hasNumber = /\d/.test(password);
+  const validateAccessCode = (AccessCode) => {
+    if (!AccessCode) return null; // Optional for edit
+    const hasUpperCase = /[A-Z]/.test(AccessCode);
+    const hasLowerCase = /[a-z]/.test(AccessCode);
+    const hasNumber = /\d/.test(AccessCode);
     const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
-      password
+      AccessCode
     );
 
     if (!hasUpperCase)
-      return "Password must contain at least one uppercase letter";
+      return "AccessCode must contain at least one uppercase letter";
     if (!hasLowerCase)
-      return "Password must contain at least one lowercase letter";
-    if (!hasNumber) return "Password must contain at least one number";
+      return "AccessCode must contain at least one lowercase letter";
+    if (!hasNumber) return "AccessCode must contain at least one number";
     if (!hasSpecialChar)
-      return "Password must contain at least one special character";
+      return "AccessCode must contain at least one special character";
     return null;
   };
 
@@ -40,7 +40,7 @@ const BranchDetail = () => {
       const foundBranch = branches.find((b) => b._id === id);
       if (foundBranch) {
         setBranch(foundBranch);
-        setFormData({ ...foundBranch, password: "" }); // Initialize password as empty string
+        setFormData({ ...foundBranch, AccessCode: "" }); // Initialize AccessCode as empty string
       } else {
         navigate("/branch");
       }
@@ -70,12 +70,12 @@ const BranchDetail = () => {
 
   const handleSave = async () => {
     try {
-      const passwordError = formData.password
-        ? validatePassword(formData.password)
+      const AccessCodeError = formData.AccessCode
+        ? validateAccessCode(formData.AccessCode)
         : null;
 
-      if (passwordError) {
-        alert(passwordError);
+      if (AccessCodeError) {
+        alert(AccessCodeError);
         return;
       }
 
@@ -88,7 +88,7 @@ const BranchDetail = () => {
 
   const handleCancel = () => {
     const handleCancel = () => {
-      setFormData({ ...branch, password: "" });
+      setFormData({ ...branch, AccessCode: "" });
       setIsEditing(false);
     };
     setIsEditing(false);
@@ -177,6 +177,12 @@ const BranchDetail = () => {
                 className="add-product-button "
               >
                 <i className="bi bi-box-seam "></i> Products
+              </Link>
+              <Link
+                to={`/branch/${id}/accounts`}
+                className="add-account-button "
+              >
+                <i className="bi bi-bank2"></i> Accounts
               </Link>
             </>
           )}
@@ -352,13 +358,13 @@ const BranchDetail = () => {
             <h2>Security</h2>
             <div className="detail-grid">
               <div className="detail-item full-width">
-                <label>Update Password (Leave blank to keep current)</label>
+                <label>Update AccessCode (Leave blank to keep current)</label>
                 <input
-                  type="password"
-                  name="password"
-                  value={formData.password || ""}
+                  type="AccessCode"
+                  name="AccessCode"
+                  value={formData.AccessCode || ""}
                   onChange={handleInputChange}
-                  placeholder="Enter new password"
+                  placeholder="Enter new AccessCode"
                   title="Must contain at least one uppercase, one lowercase, one number, and one special character"
                 />
                 <small
@@ -375,8 +381,6 @@ const BranchDetail = () => {
             </div>
           </div>
         )}
-
-    
 
         {/* <div className="detail-section">
           <div className="section-header">

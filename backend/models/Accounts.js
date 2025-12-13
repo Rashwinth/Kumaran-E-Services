@@ -11,7 +11,7 @@ const accountSchema = new Schema(
 {
 type: {
 type: String,
-enum: ["Upi","Cash"],
+enum: ["Upi","Cash","Credits"],
 required: true,
 },
 branch: {
