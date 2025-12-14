@@ -27,6 +27,7 @@ import ProtectedRoute from "./Modals/ProtectedRoute";
 import BranchProducts from "./Pages/Branch/BranchProducts";
 import AddEmployeeModal from "./Components/Employee/AddEmployee";
 import AccountManagement from "./Pages/Branch/Accounts";
+import BranchAccountDetail from "./Pages/Branch/BranchAccountDetail";
 
 // Protected Route Component (fixed)
 
@@ -77,7 +78,10 @@ function AppContent() {
             <Route path="/branch/:id/products" element={<BranchProducts />} />
 
             {/* Accounts Route */}
-            <Route path="/branch/:id/accounts" element={<AccountManagement />} />
+            <Route
+              path="/branch/:id/accounts"
+              element={<BranchAccountDetail />}
+            />
             <Route path="/accounts" element={<AccountManagement />} />
           </Route>
 

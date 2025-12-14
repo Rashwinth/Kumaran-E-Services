@@ -14,6 +14,15 @@ const {
   getBranchStats,
   getBranchById,
 } = require("../controller/BranchController");
+const {
+  getAllAccounts,
+  getAccountsByBranch,
+  getAccountById,
+  createAccount,
+  updateAccount,
+  deleteAccount,
+  addBalanceHistory,
+} = require("../controller/accountController");
 
 // Public routes
 router.get("/", (req, res) => {
@@ -53,5 +62,29 @@ router.get(
   GetEmployee
 );
 router.delete("/employees/:id", protect, authorize("admin"), deleteEmployee);
+
+// Protected routes - Account Management
+router.get("/accounts", protect, authorize("admin", "manager"), getAllAccounts);
+router.get(
+  "/accounts/branch/:branchId",
+  protect,
+  authorize("admin", "manager"),
+  getAccountsByBranch
+);
+router.get(
+  "/accounts/:id",
+  protect,
+  authorize("admin", "manager"),
+  getAccountById
+);
+router.post("/accounts", protect, authorize("admin"), createAccount);
+router.put("/accounts/:id", protect, authorize("admin"), updateAccount);
+router.delete("/accounts/:id", protect, authorize("admin"), deleteAccount);
+router.post(
+  "/accounts/:id/balance",
+  protect,
+  authorize("admin"),
+  addBalanceHistory
+);
 
 module.exports = router;
