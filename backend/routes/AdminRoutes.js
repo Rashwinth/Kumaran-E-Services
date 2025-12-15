@@ -23,6 +23,26 @@ const {
   deleteAccount,
   addBalanceHistory,
 } = require("../controller/accountController");
+const {
+  getAllProducts,
+  getProductById,
+  createProduct,
+  updateProduct,
+  deleteProduct,
+} = require("../controller/ProductController");
+const {
+  getAllCategories,
+  createCategory,
+  updateCategory,
+  deleteCategory,
+} = require("../controller/CategoryController");
+const {
+  getAllSubCategories,
+  getSubCategoriesByCategory,
+  createSubCategory,
+  updateSubCategory,
+  deleteSubCategory,
+} = require("../controller/SubCategoryController");
 
 // Public routes
 router.get("/", (req, res) => {
@@ -85,6 +105,55 @@ router.post(
   protect,
   authorize("admin"),
   addBalanceHistory
+);
+
+// Protected routes - Product Management
+router.get("/products", protect, authorize("admin", "manager"), getAllProducts);
+router.get(
+  "/products/:id",
+  protect,
+  authorize("admin", "manager"),
+  getProductById
+);
+router.post("/products", protect, authorize("admin"), createProduct);
+router.put("/products/:id", protect, authorize("admin"), updateProduct);
+router.delete("/products/:id", protect, authorize("admin"), deleteProduct);
+
+// Protected routes - Categories & SubCategories
+router.get(
+  "/categories",
+  protect,
+  authorize("admin", "manager"),
+  getAllCategories
+);
+router.post("/categories", protect, authorize("admin"), createCategory);
+router.put("/categories/:id", protect, authorize("admin"), updateCategory);
+router.delete("/categories/:id", protect, authorize("admin"), deleteCategory);
+
+router.get(
+  "/subcategories",
+  protect,
+  authorize("admin", "manager"),
+  getAllSubCategories
+);
+router.get(
+  "/subcategories/category/:categoryId",
+  protect,
+  authorize("admin", "manager"),
+  getSubCategoriesByCategory
+);
+router.post("/subcategories", protect, authorize("admin"), createSubCategory);
+router.put(
+  "/subcategories/:id",
+  protect,
+  authorize("admin"),
+  updateSubCategory
+);
+router.delete(
+  "/subcategories/:id",
+  protect,
+  authorize("admin"),
+  deleteSubCategory
 );
 
 module.exports = router;

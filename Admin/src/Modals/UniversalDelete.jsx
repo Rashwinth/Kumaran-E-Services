@@ -13,7 +13,7 @@ const UniversalDelete = ({
   if (!isOpen) return null;
 
   return (
-    <div className="universal-delete-overlay">
+    <div className="universal-delete-overlay" style={{ zIndex: 9999 }}>
       <div
         className="universal-delete-modal"
         onClick={(e) => e.stopPropagation()}

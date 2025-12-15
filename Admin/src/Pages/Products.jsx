@@ -1,194 +1,18 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
 import "../Styles/Products.css";
 import UniversalDelete from "../Modals/UniversalDelete";
-
-// Sample products data
-const productsData = [
-  {
-    _id: "1",
-    name: "Basmati Rice",
-    category: "Groceries",
-    price: 120,
-    unit: "kg",
-    stock: 250,
-    status: "In Stock",
-  },
-  {
-    _id: "2",
-    name: "Toor Dal",
-    category: "Groceries",
-    price: 95,
-    unit: "kg",
-    stock: 180,
-    status: "In Stock",
-  },
-  {
-    _id: "3",
-    name: "Sunflower Oil",
-    category: "Groceries",
-    price: 145,
-    unit: "ltr",
-    stock: 120,
-    status: "In Stock",
-  },
-  {
-    _id: "4",
-    name: "Sugar",
-    category: "Groceries",
-    price: 42,
-    unit: "kg",
-    stock: 15,
-    status: "Low Stock",
-  },
-  {
-    _id: "5",
-    name: "Wheat Flour",
-    category: "Groceries",
-    price: 38,
-    unit: "kg",
-    stock: 300,
-    status: "In Stock",
-  },
-  {
-    _id: "6",
-    name: "Tea Powder",
-    category: "Beverages",
-    price: 280,
-    unit: "kg",
-    stock: 85,
-    status: "In Stock",
-  },
-  {
-    _id: "7",
-    name: "Coffee Powder",
-    category: "Beverages",
-    price: 420,
-    unit: "kg",
-    stock: 60,
-    status: "In Stock",
-  },
-  {
-    _id: "8",
-    name: "Milk Powder",
-    category: "Dairy",
-    price: 350,
-    unit: "kg",
-    stock: 0,
-    status: "Out of Stock",
-  },
-  {
-    _id: "9",
-    name: "Ghee",
-    category: "Dairy",
-    price: 480,
-    unit: "kg",
-    stock: 45,
-    status: "In Stock",
-  },
-  {
-    _id: "10",
-    name: "Paneer",
-    category: "Dairy",
-    price: 320,
-    unit: "kg",
-    stock: 25,
-    status: "In Stock",
-  },
-  {
-    _id: "11",
-    name: "Butter",
-    category: "Dairy",
-    price: 450,
-    unit: "kg",
-    stock: 30,
-    status: "In Stock",
-  },
-  {
-    _id: "12",
-    name: "Curd",
-    category: "Dairy",
-    price: 60,
-    unit: "ltr",
-    stock: 50,
-    status: "In Stock",
-  },
-  {
-    _id: "13",
-    name: "Coconut Oil",
-    category: "Groceries",
-    price: 180,
-    unit: "ltr",
-    stock: 90,
-    status: "In Stock",
-  },
-  {
-    _id: "14",
-    name: "Groundnut Oil",
-    category: "Groceries",
-    price: 165,
-    unit: "ltr",
-    stock: 75,
-    status: "In Stock",
-  },
-  {
-    _id: "15",
-    name: "Mustard Oil",
-    category: "Groceries",
-    price: 155,
-    unit: "ltr",
-    stock: 8,
-    status: "Low Stock",
-  },
-  {
-    _id: "16",
-    name: "Chana Dal",
-    category: "Groceries",
-    price: 88,
-    unit: "kg",
-    stock: 140,
-    status: "In Stock",
-  },
-  {
-    _id: "17",
-    name: "Moong Dal",
-    category: "Groceries",
-    price: 105,
-    unit: "kg",
-    stock: 110,
-    status: "In Stock",
-  },
-  {
-    _id: "18",
-    name: "Urad Dal",
-    category: "Groceries",
-    price: 98,
-    unit: "kg",
-    stock: 95,
-    status: "In Stock",
-  },
-  {
-    _id: "19",
-    name: "Masoor Dal",
-    category: "Groceries",
-    price: 92,
-    unit: "kg",
-    stock: 125,
-    status: "In Stock",
-  },
-  {
-    _id: "20",
-    name: "Salt",
-    category: "Groceries",
-    price: 18,
-    unit: "kg",
-    stock: 400,
-    status: "In Stock",
-  },
-];
+import ProductModal from "../Modals/Product/ProductModal";
+import { useProduct } from "../Context/ProductContext";
 
 const Products = () => {
-  const [products, setProducts] = useState(productsData);
+  const {
+    products,
+    loading,
+    getProducts,
+    deleteProduct,
+    getCategories,
+    categories,
+  } = useProduct();
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
@@ -198,24 +22,36 @@ const Products = () => {
   const [productToDelete, setProductToDelete] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const categories = ["All", ...new Set(products.map((p) => p.category))];
+  // Edit/Add Modal State
+  const [productModalOpen, setProductModalOpen] = useState(false);
+  const [productToEdit, setProductToEdit] = useState(null);
+
+  useEffect(() => {
+    getProducts();
+    getCategories();
+  }, [getProducts, getCategories]);
+
+  const uniqueCategories = ["All", ...categories.map((c) => c.name)];
 
   const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
-      .toLowerCase()
-      .includes(searchTerm.toLowerCase());
+    const matchesSearch =
+      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+
+    const categoryName = product.category?.name || "Uncategorized";
     const matchesCategory =
-      filterCategory === "All" || product.category === filterCategory;
-    const matchesStatus =
-      filterStatus === "All" || product.status === filterStatus;
+      filterCategory === "All" || categoryName === filterCategory;
+
+    // Status logic: Assuming "isActive" is the status, or we derive stock status if we had stock count
+    // The previous code had "status" field, but the model has "isActive".
+    // And "stock" is not in the model shown initially? Wait, let me check the model again.
+    // The model had NO stock field. It only had isActive.
+    // I will use isActive for status filter for now.
+    const status = product.isActive ? "Active" : "Inactive";
+    const matchesStatus = filterStatus === "All" || status === filterStatus;
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
-
-  const getStockClass = (status) => {
-    if (status === "In Stock") return "in-stock";
-    if (status === "Low Stock") return "low-stock";
-    return "out-of-stock";
-  };
 
   const handleDeleteClick = (product) => {
     setProductToDelete(product);
@@ -224,15 +60,21 @@ const Products = () => {
 
   const confirmDelete = async () => {
     if (!productToDelete) return;
-
     setIsDeleting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setProducts((prev) => prev.filter((p) => p._id !== productToDelete._id));
-      setDeleteModalOpen(false);
-      setProductToDelete(null);
-      setIsDeleting(false);
-    }, 1000);
+    await deleteProduct(productToDelete._id);
+    setDeleteModalOpen(false);
+    setProductToDelete(null);
+    setIsDeleting(false);
+  };
+
+  const handleEditClick = (product) => {
+    setProductToEdit(product);
+    setProductModalOpen(true);
+  };
+
+  const handleAddClick = () => {
+    setProductToEdit(null);
+    setProductModalOpen(true);
   };
 
   return (
@@ -244,22 +86,24 @@ const Products = () => {
             {filteredProducts.length} products found
           </p>
         </div>
-        <button className="add-product-btn">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M12 5V19M5 12H19"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          Add New Product
-        </button>
+        <div className="header-actions">
+          <button className="add-product-btn" onClick={handleAddClick}>
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M12 5V19M5 12H19"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            Add New Product
+          </button>
+        </div>
       </div>
 
       <div className="products-filters">
@@ -291,7 +135,7 @@ const Products = () => {
             value={filterCategory}
             onChange={(e) => setFilterCategory(e.target.value)}
           >
-            {categories.map((cat) => (
+            {uniqueCategories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
               </option>
@@ -306,37 +150,69 @@ const Products = () => {
             onChange={(e) => setFilterStatus(e.target.value)}
           >
             <option value="All">All</option>
-            <option value="In Stock">In Stock</option>
-            <option value="Low Stock">Low Stock</option>
-            <option value="Out of Stock">Out of Stock</option>
+            <option value="Active">Active</option>
+            <option value="Inactive">Inactive</option>
           </select>
         </div>
       </div>
 
-      <div className="products-grid">
-        {filteredProducts.map((product) => (
-          <div key={product._id} className="product-card">
-            <div className="product-info">
-              <h3>{product.name}</h3>
-              <p className="product-category">{product.category}</p>
-              <p className="product-price">
-              ₹{product.price}/{product.unit}
-              </p>
+      {loading ? (
+        <div className="loading-state">Loading products...</div>
+      ) : (
+        <div className="products-grid">
+          {filteredProducts.map((product) => (
+            <div key={product._id} className="product-card">
+              <div className="product-info">
+                <div
+                  className="product-name-row"
+                  style={{
+                    display: "flex",
+                    justifyContent: "space-between",
+                    alignItems: "center",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <h3 style={{ margin: 0 }}>{product.name}</h3>
+                  <span
+                    className={`status-badge ${
+                      product.isActive ? "active" : "inactive"
+                    }`}
+                    style={{
+                      marginTop: 0,
+                      fontSize: "0.65rem",
+                      padding: "0.15rem 0.5rem",
+                    }}
+                  >
+                    {product.isActive ? "Active" : "Inactive"}
+                  </span>
+                </div>
+                <p className="product-category">
+                  {product.category?.name || "Uncategorized"}
+                </p>
+                <p className="product-price">
+                  ₹{product.mrp}/{product.unit}
+                </p>
+              </div>
+              <div className="product-actions">
+                <button
+                  className="btn-edit"
+                  onClick={() => handleEditClick(product)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDeleteClick(product)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="product-actions">
-              <button className="btn-edit">Edit</button>
-              <button
-                className="btn-delete"
-                onClick={() => handleDeleteClick(product)}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
-      </div>
+          ))}
+        </div>
+      )}
 
-      {filteredProducts.length === 0 && (
+      {!loading && filteredProducts.length === 0 && (
         <div className="no-products">
           <svg
             viewBox="0 0 24 24"
@@ -365,6 +241,13 @@ const Products = () => {
         message="Are you sure you want to delete this product? This action cannot be undone."
         itemName={productToDelete?.name}
         isLoading={isDeleting}
+      />
+
+      {/* Add/Edit Product Modal */}
+      <ProductModal
+        isOpen={productModalOpen}
+        onClose={() => setProductModalOpen(false)}
+        productToEdit={productToEdit}
       />
     </div>
   );

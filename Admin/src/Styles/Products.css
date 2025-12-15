@@ -312,4 +312,25 @@
   .products-container .products-grid {
     grid-template-columns: 1fr;
   }
+
+  /* Status Badge */
+  .products-container .status-badge {
+    display: inline-block;
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    margin-top: 0.5rem;
+  }
+
+  .products-container .status-badge.active {
+    background-color: #d1fae5;
+    color: #065f46;
+  }
+
+  .products-container .status-badge.inactive {
+    background-color: #fee2e2;
+    color: #991b1b;
+  }
 }
