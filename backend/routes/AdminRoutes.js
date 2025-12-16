@@ -156,4 +156,22 @@ router.delete(
   deleteSubCategory
 );
 
+const {
+  addInventory,
+  getInventoryByBranch,
+  updateInventory,
+  deleteInventory,
+} = require("../controller/InventoryController");
+
+// Protected routes - Inventory Management
+router.post("/inventory", protect, authorize("admin"), addInventory);
+router.get(
+  "/inventory/:branchId",
+  protect,
+  authorize("admin", "manager"),
+  getInventoryByBranch
+);
+router.put("/inventory/:id", protect, authorize("admin"), updateInventory);
+router.delete("/inventory/:id", protect, authorize("admin"), deleteInventory);
+
 module.exports = router;

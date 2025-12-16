@@ -15,6 +15,11 @@ const creditItemSchema = new mongoose.Schema({
     type: Number,
     required: true,
   },
+  status: {
+    type: String,
+    enum: ["Pending", "Paid"],
+    default: "Pending",
+  },
 });
 
 const customerSchema = new mongoose.Schema(

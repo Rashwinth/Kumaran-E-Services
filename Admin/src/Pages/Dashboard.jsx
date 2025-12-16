@@ -1,10 +1,17 @@
 import "../Styles/Dashboard.css";
 import { useAuth } from "../Context/AuthContext";
+import { useBranch } from "../Context/BranchContext";
 import { Link } from "react-router-dom";
 import "bootstrap/dist/css/bootstrap.min.css";
+import { useEffect } from "react";
 
 const Dashboard = () => {
   const { user } = useAuth();
+  const { branches, getBranches } = useBranch();
+
+  useEffect(() => {
+    getBranches();
+  }, [getBranches]);
 
   return (
     <div className="dashboard-container">
@@ -13,33 +20,51 @@ const Dashboard = () => {
           <div>
             <h1>Welcome back, {user?.name?.split(" ")[0] || "User"}! 👋</h1>
           </div>
-          <Link
-            to="/branch"
-            className="branch-nav-btn"
-            style={{ textDecoration: "none" }}
-          >
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
+          <div style={{ display: "flex", gap: "15px", marginLeft: "auto" }}>
+            <Link
+              to="/branch"
+              className="branch-nav-btn"
+              style={{ textDecoration: "none" }}
             >
-              <path
-                d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-              <path
-                d="M9 22V12H15V22"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Manage Branches
-          </Link>
+              <svg
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M9 22V12H15V22"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+              </svg>
+              Manage Branches
+            </Link>
+            <Link
+              to={"/products"}
+              className="branch-nav-btn"
+              style={{ textDecoration: "none" }}
+            >
+              <i className="bi bi-box-seam"></i>
+              Manage Products
+            </Link>
+            <Link
+              to={"/accounts"}
+              className="branch-nav-btn"
+              style={{ textDecoration: "none" }}
+            >
+              <i className="bi bi-bank2"></i>
+              Manage Accounts
+            </Link>
+          </div>
         </div>
         <div className="stats-grid">
           <div className="stat-card">
@@ -282,90 +307,79 @@ const Dashboard = () => {
             <div className="card-header">
               <h2>Quick Actions</h2>
             </div>
-            <div className="quick-actions">
-              <Link
-                to="/branch"
-                className="action-button"
-                style={{ textDecoration: "none" }}
-              >
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M3 9L12 2L21 9V20C21 20.5304 20.7893 21.0391 20.4142 21.4142C20.0391 21.7893 19.5304 22 19 22H5C4.46957 22 3.96086 21.7893 3.58579 21.4142C3.21071 21.0391 3 20.5304 3 20V9Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M9 22V12H15V22"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                Manage Branches
-              </Link>
-              <Link
-                to={"/products"}
-                className="action-button"
-                style={{ textDecoration: "none" }}
-              >
-                <i className="bi bi-box-seam text-dark"></i>
-                Manage Products
-              </Link>
-              <Link to={"/accounts"} className="action-button">
-                <i className="bi bi-bank2 text-dark"></i>
-                Manage Accounts
-              </Link>
-              <button className="action-button">
-                <svg
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  xmlns="http://www.w3.org/2000/svg"
-                >
-                  <path
-                    d="M14 2H6C5.46957 2 4.96086 2.21071 4.58579 2.58579C4.21071 2.96086 4 3.46957 4 4V20C4 20.5304 4.21071 21.0391 4.58579 21.4142C4.96086 21.7893 5.46957 22 6 22H18C18.5304 22 19.0391 21.7893 19.4142 21.4142C19.7893 21.0391 20 20.5304 20 20V8L14 2Z"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M14 2V8H20"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M16 13H8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M16 17H8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                  <path
-                    d="M10 9H9H8"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                View Reports
-              </button>
+            <div
+              className="quick-actions"
+              style={{ display: "flex", flexDirection: "column", gap: "20px" }}
+            >
+              {branches?.length > 0 ? (
+                branches.map((branch) => (
+                  <div key={branch._id} className="branch-group">
+                    <h6 className="mb-3 fw-bold text-secondary">
+                      {branch.name}{" "}
+                      <span className="text-muted small">({branch.code})</span>
+                    </h6>
+                    <div
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4, 1fr)",
+                        gap: "15px",
+                      }}
+                    >
+                      <Link
+                        to={`/branch/${branch._id}/accounts`}
+                        className="action-button"
+                        style={{
+                          textDecoration: "none",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <i className="bi bi-bank2 fs-4 mb-2 text-primary"></i>
+                        <span>Accounts</span>
+                      </Link>
+                      <Link
+                        to={`/branch/${branch._id}/products`}
+                        className="action-button"
+                        style={{
+                          textDecoration: "none",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <i className="bi bi-box-seam fs-4 mb-2 text-success"></i>
+                        <span>Products</span>
+                      </Link>
+                      <Link
+                        to={`/branch/${branch._id}/employee`}
+                        className="action-button"
+                        style={{
+                          textDecoration: "none",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <i className="bi bi-people fs-4 mb-2 text-info"></i>
+                        <span>Employees</span>
+                      </Link>
+                      <Link
+                        to={`/branch/${branch._id}/reports`}
+                        className="action-button"
+                        style={{
+                          textDecoration: "none",
+                          justifyContent: "center",
+                        }}
+                      >
+                        <i className="bi bi-file-bar-graph fs-4 mb-2 text-warning"></i>
+                        <span>Reports</span>
+                      </Link>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center py-4">
+                  <p className="text-muted mb-3">No branches found.</p>
+                  <Link to="/branch" className="btn btn-primary btn-sm">
+                    Create Branch
+                  </Link>
+                </div>
+              )}
             </div>
           </div>
         </div>

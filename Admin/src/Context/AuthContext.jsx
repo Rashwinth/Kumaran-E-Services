@@ -7,6 +7,7 @@ import {
 } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
+import { clearAppCache } from "../utils/cacheUtils";
 
 const AuthContext = createContext();
 
@@ -202,9 +203,10 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout error:", error);
     } finally {
       clearAuthState();
+      clearAppCache(); // Clear application cache on logout
     }
   };
-
+ 
   // Update password function
   const updatePassword = async (currentPassword, newPassword) => {
     try {

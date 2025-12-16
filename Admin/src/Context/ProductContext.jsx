@@ -2,6 +2,13 @@ import { createContext, useContext, useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
+import {
+  setCache,
+  getCache,
+  removeCache,
+  CACHE_KEYS,
+  TTL,
+} from "../utils/cacheUtils";
 
 const ProductContext = createContext();
 
@@ -22,59 +29,108 @@ export const ProductProvider = ({ children }) => {
   const { accessToken } = useAuth();
 
   // Fetch all products
-  const getProducts = useCallback(async () => {
-    if (!accessToken) return;
+  const getProducts = useCallback(
+    async (forceRefresh = false) => {
+      if (!accessToken) return;
 
-    try {
-      setProductsLoading(true);
-      const response = await axios.get(`${baseURL}/products`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      try {
+        setProductsLoading(true);
 
-      if (response.data.success) {
-        setProducts(response.data.data);
+        // Check cache first
+        if (!forceRefresh) {
+          const cachedProducts = await getCache(CACHE_KEYS.PRODUCTS);
+          if (cachedProducts) {
+            setProducts(cachedProducts);
+            setProductsLoading(false);
+            return;
+          }
+        }
+
+        const response = await axios.get(`${baseURL}/products`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (response.data.success) {
+          setProducts(response.data.data);
+          // Cache the result
+          await setCache(CACHE_KEYS.PRODUCTS, response.data.data, TTL.SHORT); // Products might change more often, short TTL
+        }
+      } catch (error) {
+        console.error("Error fetching products:", error);
+        toast.error(
+          error.response?.data?.message || "Failed to fetch products"
+        );
+      } finally {
+        setProductsLoading(false);
       }
-    } catch (error) {
-      console.error("Error fetching products:", error);
-      toast.error(error.response?.data?.message || "Failed to fetch products");
-    } finally {
-      setProductsLoading(false);
-    }
-  }, [accessToken, baseURL]);
+    },
+    [accessToken, baseURL]
+  );
 
   // Fetch all categories
-  const getCategories = useCallback(async () => {
-    if (!accessToken) return;
+  const getCategories = useCallback(
+    async (forceRefresh = false) => {
+      if (!accessToken) return;
 
-    try {
-      const response = await axios.get(`${baseURL}/categories`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
+      try {
+        // Check cache
+        if (!forceRefresh) {
+          const cachedCategories = await getCache(CACHE_KEYS.CATEGORIES);
+          if (cachedCategories) {
+            setCategories(cachedCategories);
+            return;
+          }
+        }
 
-      if (response.data.success) {
-        setCategories(response.data.data);
+        const response = await axios.get(`${baseURL}/categories`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (response.data.success) {
+          setCategories(response.data.data);
+          await setCache(CACHE_KEYS.CATEGORIES, response.data.data, TTL.LONG); // Categories rarely change
+        }
+      } catch (error) {
+        console.error("Error fetching categories:", error);
       }
-    } catch (error) {
-      console.error("Error fetching categories:", error);
-    }
-  }, [accessToken, baseURL]);
+    },
+    [accessToken, baseURL]
+  );
 
   // Fetch all subcategories
-  const getSubCategories = useCallback(async () => {
-    if (!accessToken) return;
-    try {
-      const response = await axios.get(`${baseURL}/subcategories`, {
-        headers: { Authorization: `Bearer ${accessToken}` },
-      });
-      if (response.data.success) {
-        setSubCategories(response.data.data);
+  const getSubCategories = useCallback(
+    async (forceRefresh = false) => {
+      if (!accessToken) return;
+      try {
+        if (!forceRefresh) {
+          const cached = await getCache(CACHE_KEYS.SUBCATEGORIES);
+          if (cached) {
+            setSubCategories(cached);
+            return;
+          }
+        }
+
+        const response = await axios.get(`${baseURL}/subcategories`, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+        if (response.data.success) {
+          setSubCategories(response.data.data);
+          await setCache(
+            CACHE_KEYS.SUBCATEGORIES,
+            response.data.data,
+            TTL.LONG
+          );
+        }
+      } catch (error) {
+        console.error("Error fetching subcategories", error);
       }
-    } catch (error) {
-      console.error("Error fetching subcategories", error);
-    }
-  }, [accessToken, baseURL]);
+    },
+    [accessToken, baseURL]
+  );
 
   // Fetch subcategories by category ID
+  // This is tricky to cache because it depends on ID.
+  // We'll skip caching this specific query for simplicity, or we rely on the main list if we had it.
   const getSubCategoriesByCategory = async (categoryId) => {
     if (!accessToken) return [];
 
@@ -105,7 +161,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Product added successfully");
-        getProducts();
+        removeCache(CACHE_KEYS.PRODUCTS); // Invalidate cache
+        getProducts(true); // Force refresh
         return response.data;
       }
     } catch (error) {
@@ -127,7 +184,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Product updated successfully");
-        getProducts();
+        removeCache(CACHE_KEYS.PRODUCTS); // Invalidate cache
+        getProducts(true);
         return response.data;
       }
     } catch (error) {
@@ -145,7 +203,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Product deleted successfully");
-        getProducts();
+        removeCache(CACHE_KEYS.PRODUCTS); // Invalidate cache
+        getProducts(true);
         return response.data;
       }
     } catch (error) {
@@ -167,7 +226,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Category added successfully");
-        getCategories();
+        removeCache(CACHE_KEYS.CATEGORIES);
+        getCategories(true);
         return response.data;
       }
     } catch (error) {
@@ -189,9 +249,11 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Category updated successfully");
-        getCategories();
+        removeCache(CACHE_KEYS.CATEGORIES);
+        getCategories(true);
         // Also refresh products in case category name is denormalized
-        getProducts();
+        removeCache(CACHE_KEYS.PRODUCTS);
+        getProducts(true);
         return response.data;
       }
     } catch (error) {
@@ -209,9 +271,11 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Category deleted successfully");
-        getCategories();
+        removeCache(CACHE_KEYS.CATEGORIES);
+        getCategories(true);
         // Refresh products
-        getProducts();
+        removeCache(CACHE_KEYS.PRODUCTS);
+        getProducts(true);
         return response.data;
       }
     } catch (error) {
@@ -231,7 +295,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Subcategory added successfully");
-        // We might want to refresh general list or just return
+        removeCache(CACHE_KEYS.SUBCATEGORIES);
+        getSubCategories(true);
         return response.data;
       }
     } catch (error) {
@@ -251,6 +316,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Subcategory updated successfully");
+        removeCache(CACHE_KEYS.SUBCATEGORIES);
+        getSubCategories(true);
         return response.data;
       }
     } catch (error) {
@@ -270,6 +337,8 @@ export const ProductProvider = ({ children }) => {
 
       if (response.data.success) {
         toast.success("Subcategory deleted successfully");
+        removeCache(CACHE_KEYS.SUBCATEGORIES);
+        getSubCategories(true);
         return response.data;
       }
     } catch (error) {

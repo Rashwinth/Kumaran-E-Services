@@ -1,213 +1,72 @@
-import { useState } from "react";
-import { Link } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { Link, useParams } from "react-router-dom";
 import "../../Styles/Products.css";
 import UniversalDelete from "../../Modals/UniversalDelete";
-
-// Sample products data
-const productsData = [
-  {
-    _id: "1",
-    name: "Basmati Rice",
-    category: "Groceries",
-    price: 120,
-    unit: "kg",
-    stock: 250,
-    status: "In Stock",
-  },
-  {
-    _id: "2",
-    name: "Toor Dal",
-    category: "Groceries",
-    price: 95,
-    unit: "kg",
-    stock: 180,
-    status: "In Stock",
-  },
-  {
-    _id: "3",
-    name: "Sunflower Oil",
-    category: "Groceries",
-    price: 145,
-    unit: "ltr",
-    stock: 120,
-    status: "In Stock",
-  },
-  {
-    _id: "4",
-    name: "Sugar",
-    category: "Groceries",
-    price: 42,
-    unit: "kg",
-    stock: 15,
-    status: "Low Stock",
-  },
-  {
-    _id: "5",
-    name: "Wheat Flour",
-    category: "Groceries",
-    price: 38,
-    unit: "kg",
-    stock: 300,
-    status: "In Stock",
-  },
-  {
-    _id: "6",
-    name: "Tea Powder",
-    category: "Beverages",
-    price: 280,
-    unit: "kg",
-    stock: 85,
-    status: "In Stock",
-  },
-  {
-    _id: "7",
-    name: "Coffee Powder",
-    category: "Beverages",
-    price: 420,
-    unit: "kg",
-    stock: 60,
-    status: "In Stock",
-  },
-  {
-    _id: "8",
-    name: "Milk Powder",
-    category: "Dairy",
-    price: 350,
-    unit: "kg",
-    stock: 0,
-    status: "Out of Stock",
-  },
-  {
-    _id: "9",
-    name: "Ghee",
-    category: "Dairy",
-    price: 480,
-    unit: "kg",
-    stock: 45,
-    status: "In Stock",
-  },
-  {
-    _id: "10",
-    name: "Paneer",
-    category: "Dairy",
-    price: 320,
-    unit: "kg",
-    stock: 25,
-    status: "In Stock",
-  },
-  {
-    _id: "11",
-    name: "Butter",
-    category: "Dairy",
-    price: 450,
-    unit: "kg",
-    stock: 30,
-    status: "In Stock",
-  },
-  {
-    _id: "12",
-    name: "Curd",
-    category: "Dairy",
-    price: 60,
-    unit: "ltr",
-    stock: 50,
-    status: "In Stock",
-  },
-  {
-    _id: "13",
-    name: "Coconut Oil",
-    category: "Groceries",
-    price: 180,
-    unit: "ltr",
-    stock: 90,
-    status: "In Stock",
-  },
-  {
-    _id: "14",
-    name: "Groundnut Oil",
-    category: "Groceries",
-    price: 165,
-    unit: "ltr",
-    stock: 75,
-    status: "In Stock",
-  },
-  {
-    _id: "15",
-    name: "Mustard Oil",
-    category: "Groceries",
-    price: 155,
-    unit: "ltr",
-    stock: 8,
-    status: "Low Stock",
-  },
-  {
-    _id: "16",
-    name: "Chana Dal",
-    category: "Groceries",
-    price: 88,
-    unit: "kg",
-    stock: 140,
-    status: "In Stock",
-  },
-  {
-    _id: "17",
-    name: "Moong Dal",
-    category: "Groceries",
-    price: 105,
-    unit: "kg",
-    stock: 110,
-    status: "In Stock",
-  },
-  {
-    _id: "18",
-    name: "Urad Dal",
-    category: "Groceries",
-    price: 98,
-    unit: "kg",
-    stock: 95,
-    status: "In Stock",
-  },
-  {
-    _id: "19",
-    name: "Masoor Dal",
-    category: "Groceries",
-    price: 92,
-    unit: "kg",
-    stock: 125,
-    status: "In Stock",
-  },
-  {
-    _id: "20",
-    name: "Salt",
-    category: "Groceries",
-    price: 18,
-    unit: "kg",
-    stock: 400,
-    status: "In Stock",
-  },
-];
+import AddInventoryModal from "../../Modals/Inventory/AddInventoryModal";
+import { useBranch } from "../../Context/BranchContext";
 
 const BranchProducts = () => {
-  const [products, setProducts] = useState(productsData);
+  const { id } = useParams();
+  const {
+    branchInventory,
+    getInventory,
+    addInventory: addInventoryApi,
+    updateInventory,
+    deleteInventory,
+  } = useBranch();
+
   const [searchTerm, setSearchTerm] = useState("");
   const [filterCategory, setFilterCategory] = useState("All");
   const [filterStatus, setFilterStatus] = useState("All");
 
-  // Delete Modal State
+  // Modal States
   const [deleteModalOpen, setDeleteModalOpen] = useState(false);
-  const [productToDelete, setProductToDelete] = useState(null);
+  const [addModalOpen, setAddModalOpen] = useState(false);
+  const [inventoryToDelete, setInventoryToDelete] = useState(null);
+  const [editItem, setEditItem] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
 
-  const categories = ["All", ...new Set(products.map((p) => p.category))];
+  // Quick Stock Edit State
+  const [editingStockId, setEditingStockId] = useState(null);
+  const [newStockValue, setNewStockValue] = useState("");
 
-  const filteredProducts = products.filter((product) => {
-    const matchesSearch = product.name
+  useEffect(() => {
+    if (id) {
+      getInventory(id);
+    }
+  }, [id, getInventory]);
+
+  // Helper function to determine status
+  function getStatus(qty, threshold) {
+    if (qty === 0) return "Out of Stock";
+    if (qty <= threshold) return "Low Stock";
+    return "In Stock";
+  }
+  console.log(branchInventory);
+
+  // Extract unique categories from loaded inventory
+  const categories = [
+    "All",
+    ...new Set(
+      branchInventory.map((item) => item.product?.category?.name || "General")
+    ),
+  ];
+
+  const filteredProducts = branchInventory.filter((item) => {
+    // Inventory item structure: { product: { name, ... }, quantity, ... }
+    const productName = item.product?.name || "";
+    const categoryName = item.product?.category?.name || "General";
+    const status = getStatus(item.quantity, item.lowStockThreshold);
+
+    const matchesSearch = productName
       .toLowerCase()
       .includes(searchTerm.toLowerCase());
+
     const matchesCategory =
-      filterCategory === "All" || product.category === filterCategory;
-    const matchesStatus =
-      filterStatus === "All" || product.status === filterStatus;
+      filterCategory === "All" || categoryName === filterCategory;
+
+    const matchesStatus = filterStatus === "All" || status === filterStatus;
+
     return matchesSearch && matchesCategory && matchesStatus;
   });
 
@@ -217,35 +76,77 @@ const BranchProducts = () => {
     return "out-of-stock";
   };
 
-  const handleDeleteClick = (product) => {
-    setProductToDelete(product);
+  const handleDeleteClick = (inventoryItem) => {
+    setInventoryToDelete(inventoryItem);
     setDeleteModalOpen(true);
   };
 
-  const confirmDelete = async () => {
-    if (!productToDelete) return;
+  const handleEditClick = (inventoryItem) => {
+    setEditItem(inventoryItem);
+    setAddModalOpen(true);
+  };
 
+  const confirmDelete = async () => {
+    if (!inventoryToDelete) return;
     setIsDeleting(true);
-    // Simulate API call
-    setTimeout(() => {
-      setProducts((prev) => prev.filter((p) => p._id !== productToDelete._id));
+    try {
+      await deleteInventory(inventoryToDelete._id, id);
       setDeleteModalOpen(false);
-      setProductToDelete(null);
+      setInventoryToDelete(null);
+    } catch (error) {
+      console.error(error);
+    } finally {
       setIsDeleting(false);
-    }, 1000);
+    }
+  };
+
+  const handleAddInventory = async (data) => {
+    await addInventoryApi(data);
+    // Context handles cache refresh
+  };
+
+  const handleUpdateInventory = async (itemId, data) => {
+    await updateInventory(itemId, data, id);
+  };
+
+  const startQuickStockEdit = (item) => {
+    setEditingStockId(item._id);
+    setNewStockValue(item.quantity);
+  };
+
+  const cancelQuickStockEdit = () => {
+    setEditingStockId(null);
+    setNewStockValue("");
+  };
+
+  const saveQuickStockEdit = async (itemId) => {
+    if (newStockValue === "" || newStockValue < 0) return;
+
+    try {
+      await updateInventory(itemId, { quantity: Number(newStockValue) }, id);
+      setEditingStockId(null);
+      setNewStockValue("");
+    } catch (err) {
+      console.error("Failed to update stock", err);
+    }
   };
 
   return (
     <div className="products-container">
       <div className="products-header">
         <div className="header-left">
-            
-                      <h1>Products Management</h1>
+          <h1>Products Management</h1>
           <p className="products-count">
             {filteredProducts.length} products found
           </p>
         </div>
-        <button className="add-product-btn">
+        <button
+          className="add-product-btn"
+          onClick={() => {
+            setEditItem(null);
+            setAddModalOpen(true);
+          }}
+        >
           <svg
             viewBox="0 0 24 24"
             fill="none"
@@ -315,32 +216,93 @@ const BranchProducts = () => {
       </div>
 
       <div className="products-grid">
-        {filteredProducts.map((product) => (
-          <div key={product._id} className="product-card">
-            <div className="product-info">
-              <h3>{product.name}</h3>
-              <p className="product-category">{product.category}</p>
-              <p className="product-price">
-                ₹{product.price}/{product.unit}
-              </p>
+        {filteredProducts.map((item) => {
+          // Helper for easier access
+          const product = item.product || {};
+          const status = getStatus(item.quantity, item.lowStockThreshold);
+
+          return (
+            <div key={item._id} className="product-card">
+              <div className="product-info">
+                <h3>{product.name}</h3>
+                <p className="product-category">
+                  {product.category?.name || "General"}
+                </p>
+                <p className="product-price">
+                  ₹{item.FinalPrice}/{product.unit}
+                </p>
+              </div>
+              <div className="product-stock">
+                <div className="stock-info-row">
+                  <span className={`stock-badge ${getStockClass(status)}`}>
+                    {status}
+                  </span>
+                  <p className="stock-quantity">{item.quantity} units</p>
+                </div>
+
+                <div className="quick-stock-actions">
+                  {editingStockId === item._id ? (
+                    <div className="quick-stock-form">
+                      <input
+                        type="number"
+                        value={newStockValue}
+                        onChange={(e) => setNewStockValue(e.target.value)}
+                        className="stock-input"
+                        onClick={(e) => e.stopPropagation()}
+                        autoFocus
+                        placeholder="Qty"
+                      />
+                      <button
+                        className="btn-save-stock"
+                        onClick={() => saveQuickStockEdit(item._id)}
+                      >
+                        Save
+                      </button>
+                      <button
+                        className="btn-cancel-stock"
+                        onClick={cancelQuickStockEdit}
+                      >
+                        Cancel
+                      </button>
+                    </div>
+                  ) : (
+                    <button
+                      className="btn-quick-update"
+                      onClick={() => startQuickStockEdit(item)}
+                    >
+                      <svg
+                        width="14"
+                        height="14"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                      >
+                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                      </svg>
+                      Update Stock
+                    </button>
+                  )}
+                </div>
+              </div>
+              <div className="product-actions">
+                <button
+                  className="btn-edit"
+                  onClick={() => handleEditClick(item)}
+                >
+                  Edit
+                </button>
+                <button
+                  className="btn-delete"
+                  onClick={() => handleDeleteClick(item)}
+                >
+                  Delete
+                </button>
+              </div>
             </div>
-            <div className="product-stock">
-              <span className={`stock-badge ${getStockClass(product.status)}`}>
-                {product.status}
-              </span>
-              <p className="stock-quantity">{product.stock} units</p>
-            </div>
-            <div className="product-actions">
-              <button className="btn-edit">Edit</button>
-              <button
-                className="btn-delete"
-                onClick={() => handleDeleteClick(product)}
-              >
-                Delete
-              </button>
-            </div>
-          </div>
-        ))}
+          );
+        })}
       </div>
 
       {filteredProducts.length === 0 && (
@@ -368,10 +330,22 @@ const BranchProducts = () => {
         isOpen={deleteModalOpen}
         onClose={() => setDeleteModalOpen(false)}
         onDelete={confirmDelete}
-        title="Delete Product"
-        message="Are you sure you want to delete this product? This action cannot be undone."
-        itemName={productToDelete?.name}
+        title="Delete Inventory"
+        message="Are you sure you want to remove this product from the branch inventory?"
+        itemName={inventoryToDelete?.product?.name}
         isLoading={isDeleting}
+      />
+
+      <AddInventoryModal
+        isOpen={addModalOpen}
+        onClose={() => {
+          setAddModalOpen(false);
+          setEditItem(null);
+        }}
+        branchId={id}
+        onAdd={handleAddInventory}
+        onUpdate={handleUpdateInventory}
+        editItem={editItem}
       />
     </div>
   );

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../Context/AuthContext";
@@ -7,13 +7,19 @@ import "../../Styles/Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
-  const { login } = useAuth();
+  const { login, isAuthenticated, loading: authLoading } = useAuth();
   const [formData, setFormData] = useState({
     identifier: "", // Can be email or employee ID
     password: "",
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+
+  useEffect(() => {
+    if (!authLoading && isAuthenticated) {
+      navigate("/dashboard");
+    }
+  }, [authLoading, isAuthenticated, navigate]);
 
   const handleChange = (e) => {
     setFormData({

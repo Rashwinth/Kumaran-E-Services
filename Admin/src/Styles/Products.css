@@ -174,11 +174,18 @@
 
 .products-container .product-stock {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  flex-direction: column;
+  gap: 0.75rem;
   padding: 1rem 0;
   border-top: 1px solid #f1f5f9;
   border-bottom: 1px solid #f1f5f9;
+}
+
+.products-container .stock-info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
 }
 
 .products-container .stock-badge {
@@ -333,4 +340,96 @@
     background-color: #fee2e2;
     color: #991b1b;
   }
+}
+
+/* Quick Stock Edit */
+.quick-stock-actions {
+  width: 100%;
+}
+
+.btn-quick-update {
+  width: 100%;
+  padding: 6px;
+  background-color: #f8fafc;
+  color: #64748b;
+  border: 1px dashed #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+}
+
+.btn-quick-update:hover {
+  background-color: #f1f5f9;
+  color: #334155;
+  border-color: #94a3b8;
+}
+
+.quick-stock-form {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+  animation: fadeIn 0.2s ease-in;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stock-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid #cbd5e1;
+  border-radius: 6px;
+  font-size: 0.9rem;
+  width: 100px; /* Fallback */
+}
+
+.stock-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.1);
+}
+
+.btn-save-stock,
+.btn-cancel-stock {
+  padding: 6px 12px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.85rem;
+  font-weight: 600;
+  transition: all 0.2s;
+}
+
+.btn-save-stock {
+  background: #10b981;
+  color: white;
+}
+
+.btn-save-stock:hover {
+  background: #059669;
+}
+
+.btn-cancel-stock {
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+.btn-cancel-stock:hover {
+  background: #e2e8f0;
+  color: #475569;
 }

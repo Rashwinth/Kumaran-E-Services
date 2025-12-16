@@ -29,6 +29,12 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
     model: "",
   });
 
+  // Tags and Compatible Models state (managed separately from simple string inputs)
+  const [tags, setTags] = useState([]);
+  const [compatibleModels, setCompatibleModels] = useState([]);
+  const [tagInput, setTagInput] = useState("");
+  const [modelInput, setModelInput] = useState("");
+
   // Modal states for adding Category/SubCategory
   const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false);
   const [isSubCategoryModalOpen, setIsSubCategoryModalOpen] = useState(false);
@@ -61,6 +67,9 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
         brand: productToEdit.brand || "",
         model: productToEdit.model || "",
       });
+      setTags(productToEdit.tags || []);
+      setCompatibleModels(productToEdit.compatibleModels || []);
+
       // Fetch subcategories for the existing category
       if (productToEdit.category) {
         handleCategoryChange(
@@ -82,6 +91,10 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
         brand: "",
         model: "",
       });
+      setTags([]);
+      setCompatibleModels([]);
+      setTagInput("");
+      setModelInput("");
       setSubCategories([]);
     }
   }, [productToEdit, isOpen]);
@@ -113,6 +126,32 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
     }
   };
 
+  // Tag Handling
+  const handleAddTag = (e, type) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      const val = type === "tags" ? tagInput.trim() : modelInput.trim();
+      if (!val) return;
+
+      if (type === "tags") {
+        if (!tags.includes(val)) setTags([...tags, val]);
+        setTagInput("");
+      } else {
+        if (!compatibleModels.includes(val))
+          setCompatibleModels([...compatibleModels, val]);
+        setModelInput("");
+      }
+    }
+  };
+
+  const removeTag = (tagToRemove, type) => {
+    if (type === "tags") {
+      setTags(tags.filter((t) => t !== tagToRemove));
+    } else {
+      setCompatibleModels(compatibleModels.filter((t) => t !== tagToRemove));
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
@@ -136,6 +175,8 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
       },
       brand: formData.brand,
       model: formData.model,
+      tags: tags,
+      compatibleModels: compatibleModels,
     };
 
     try {
@@ -176,6 +217,7 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
 
           <form onSubmit={handleSubmit} className="modal-body">
             <div className="form-grid">
+              {/* Basic Info */}
               <div className="form-group full-width">
                 <label>Product Name</label>
                 <input
@@ -183,12 +225,33 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
                   name="name"
                   value={formData.name}
                   onChange={handleChange}
-                  placeholder="e.g., Basmati Rice"
+                  placeholder="e.g., iPhone 13 Pro Max Battery"
                   required
+                />
+              </div>
+              <div className="form-group">
+                <label>Brand</label>
+                <input
+                  type="text"
+                  name="brand"
+                  value={formData.brand}
+                  onChange={handleChange}
+                  placeholder="e.g. Apple"
                 />
               </div>
 
               <div className="form-group">
+                <label>Model</label>
+                <input
+                  type="text"
+                  name="model"
+                  value={formData.model}
+                  onChange={handleChange}
+                  placeholder="e.g. A2643"
+                />
+              </div>
+
+              <div className="form-group full-width">
                 <label>SKU / Barcode</label>
                 <BarcodeInput
                   name="sku"
@@ -198,25 +261,8 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
                 />
               </div>
 
-              <div className="form-group">
-                <label>Unit</label>
-                <select
-                  name="unit"
-                  value={formData.unit}
-                  onChange={handleChange}
-                  required
-                >
-                  <option value="pcs">Pieces (pcs)</option>
-                  <option value="kg">Kilogram (kg)</option>
-                  <option value="g">Gram (g)</option>
-                  <option value="ltr">Liter (ltr)</option>
-                  <option value="ml">Milliliter (ml)</option>
-                  <option value="box">Box</option>
-                  <option value="pkt">Packet (pkt)</option>
-                  <option value="dozen">Dozen</option>
-                  <option value="set">Set</option>
-                </select>
-              </div>
+              {/* Categorization */}
+              <div className="section-divider">Categorization</div>
 
               <div className="form-group">
                 <label>Category</label>
@@ -276,8 +322,11 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
                 </div>
               </div>
 
+              {/* Pricing */}
+              <div className="section-divider">Pricing & Unit</div>
+
               <div className="form-group">
-                <label>MRP (Price)</label>
+                <label>MRP</label>
                 <input
                   type="number"
                   name="price"
@@ -291,18 +340,23 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
               </div>
 
               <div className="form-group">
-                <label>Brand (Optional)</label>
-                <input
-                  type="text"
-                  name="brand"
-                  value={formData.brand}
+                <label>Unit</label>
+                <select
+                  name="unit"
+                  value={formData.unit}
                   onChange={handleChange}
-                  placeholder="Brand Name"
-                />
+                  required
+                >
+                  <option value="pcs">Pieces (pcs)</option>
+                  <option value="set">Set</option>
+                  <option value="box">Box</option>
+                  <option value="kg">Kilogram (kg)</option>
+                  <option value="g">Gram (g)</option>
+                  <option value="ltr">Liter (ltr)</option>
+                </select>
               </div>
 
               <div className="gst-section">
-                <span className="section-title">GST Configuration</span>
                 <div className="gst-grid">
                   <div className="form-group">
                     <label>GST Type</label>
@@ -322,7 +376,7 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
                       className="form-group"
                       style={{ gridColumn: "span 2" }}
                     >
-                      <label>Total GST % (CGST + SGST)</label>
+                      <label>Total GST %</label>
                       <input
                         type="number"
                         name="commonGst"
@@ -332,13 +386,49 @@ const ProductModal = ({ isOpen, onClose, productToEdit = null }) => {
                         step="0.1"
                         placeholder="e.g. 18"
                       />
-                      <small style={{ color: "#718096", fontSize: "0.75rem" }}>
-                        Will be split into CGST:{" "}
-                        {(Number(formData.commonGst) / 2).toFixed(1)}% and SGST:{" "}
-                        {(Number(formData.commonGst) / 2).toFixed(1)}%
-                      </small>
                     </div>
                   )}
+                </div>
+              </div>
+
+              {/* Metadata */}
+              <div className="section-divider">Search Metadata (E-Service)</div>
+
+              <div className="form-group full-width">
+                <label>Compatible Models (Press Enter to add)</label>
+                <input
+                  type="text"
+                  value={modelInput}
+                  onChange={(e) => setModelInput(e.target.value)}
+                  onKeyDown={(e) => handleAddTag(e, "models")}
+                  placeholder="Type model and press Enter (e.g. iPhone 13, SM-A528B)"
+                />
+                <div className="tags-container">
+                  {compatibleModels.map((tag, idx) => (
+                    <span key={idx} className="tag-badge">
+                      {tag}{" "}
+                      <span onClick={() => removeTag(tag, "models")}>×</span>
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="form-group full-width">
+                <label>Tags / Keywords (Press Enter to add)</label>
+                <input
+                  type="text"
+                  value={tagInput}
+                  onChange={(e) => setTagInput(e.target.value)}
+                  onKeyDown={(e) => handleAddTag(e, "tags")}
+                  placeholder="e.g. Original, Warranty, Waterproof"
+                />
+                <div className="tags-container">
+                  {tags.map((tag, idx) => (
+                    <span key={idx} className="tag-badge">
+                      {tag}{" "}
+                      <span onClick={() => removeTag(tag, "tags")}>×</span>
+                    </span>
+                  ))}
                 </div>
               </div>
             </div>

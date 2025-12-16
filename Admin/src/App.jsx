@@ -5,6 +5,7 @@ import {
   Navigate,
   useLocation,
 } from "react-router-dom";
+import { useEffect } from "react";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import "./App.css";
@@ -31,6 +32,8 @@ import BranchAccountDetail from "./Pages/Branch/BranchAccountDetail";
 
 // Protected Route Component (fixed)
 
+import ScrollToTop from "./Components/ScrollToTop";
+
 // Layout wrapper to conditionally show Header
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -50,6 +53,7 @@ const Layout = ({ children }) => {
 function AppContent() {
   return (
     <Router>
+      <ScrollToTop />
       <Layout>
         <ToastContainer position="top-right" autoClose={3000} theme="light" />
 
@@ -96,9 +100,28 @@ function AppContent() {
 function App() {
   return (
     <AuthProvider>
+      <GlobalScrollFix />
       <AppContent />
     </AuthProvider>
   );
 }
+
+const GlobalScrollFix = () => {
+  useEffect(() => {
+    const handleWheel = () => {
+      if (document.activeElement.type === "number") {
+        document.activeElement.blur();
+      }
+    };
+
+    document.addEventListener("wheel", handleWheel, { passive: false });
+
+    return () => {
+      document.removeEventListener("wheel", handleWheel);
+    };
+  }, []);
+
+  return null;
+};
 
 export default App;

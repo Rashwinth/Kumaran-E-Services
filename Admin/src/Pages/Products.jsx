@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import "../Styles/Products.css";
 import UniversalDelete from "../Modals/UniversalDelete";
 import ProductModal from "../Modals/Product/ProductModal";
+import ProductDetailModal from "../Modals/Product/ProductDetailModal";
 import { useProduct } from "../Context/ProductContext";
 
 const Products = () => {
@@ -26,6 +27,10 @@ const Products = () => {
   const [productModalOpen, setProductModalOpen] = useState(false);
   const [productToEdit, setProductToEdit] = useState(null);
 
+  // View Modal State
+  const [viewModalOpen, setViewModalOpen] = useState(false);
+  const [productToView, setProductToView] = useState(null);
+
   useEffect(() => {
     getProducts();
     getCategories();
@@ -34,19 +39,24 @@ const Products = () => {
   const uniqueCategories = ["All", ...categories.map((c) => c.name)];
 
   const filteredProducts = products.filter((product) => {
+    const term = searchTerm.toLowerCase();
     const matchesSearch =
-      product.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      product.sku.toLowerCase().includes(searchTerm.toLowerCase());
+      product.name.toLowerCase().includes(term) ||
+      product.sku.toLowerCase().includes(term) ||
+      (product.brand && product.brand.toLowerCase().includes(term)) ||
+      (product.model && product.model.toLowerCase().includes(term)) ||
+      (product.tags &&
+        product.tags.some((tag) => tag.toLowerCase().includes(term))) ||
+      (product.compatibleModels &&
+        product.compatibleModels.some((model) =>
+          model.toLowerCase().includes(term)
+        ));
 
     const categoryName = product.category?.name || "Uncategorized";
     const matchesCategory =
       filterCategory === "All" || categoryName === filterCategory;
 
-    // Status logic: Assuming "isActive" is the status, or we derive stock status if we had stock count
-    // The previous code had "status" field, but the model has "isActive".
-    // And "stock" is not in the model shown initially? Wait, let me check the model again.
-    // The model had NO stock field. It only had isActive.
-    // I will use isActive for status filter for now.
+    // Status logic: Assuming "isActive" is the status
     const status = product.isActive ? "Active" : "Inactive";
     const matchesStatus = filterStatus === "All" || status === filterStatus;
 
@@ -70,6 +80,11 @@ const Products = () => {
   const handleEditClick = (product) => {
     setProductToEdit(product);
     setProductModalOpen(true);
+  };
+
+  const handleViewClick = (product) => {
+    setProductToView(product);
+    setViewModalOpen(true);
   };
 
   const handleAddClick = () => {
@@ -161,7 +176,12 @@ const Products = () => {
       ) : (
         <div className="products-grid">
           {filteredProducts.map((product) => (
-            <div key={product._id} className="product-card">
+            <div
+              key={product._id}
+              className="product-card"
+              onClick={() => handleViewClick(product)}
+              style={{ cursor: "pointer" }}
+            >
               <div className="product-info">
                 <div
                   className="product-name-row"
@@ -186,6 +206,24 @@ const Products = () => {
                     {product.isActive ? "Active" : "Inactive"}
                   </span>
                 </div>
+
+                <div
+                  style={{
+                    fontSize: "0.85rem",
+                    color: "#4a5568",
+                    marginBottom: "0.5rem",
+                  }}
+                >
+                  <span style={{ fontWeight: "bold" }}>{product.sku}</span>
+                  {(product.brand || product.model) && (
+                    <span style={{ marginLeft: "8px" }}>
+                      {product.brand && `${product.brand}`}
+                      {product.brand && product.model && " | "}
+                      {product.model && `${product.model}`}
+                    </span>
+                  )}
+                </div>
+
                 <p className="product-category">
                   {product.category?.name || "Uncategorized"}
                 </p>
@@ -196,13 +234,19 @@ const Products = () => {
               <div className="product-actions">
                 <button
                   className="btn-edit"
-                  onClick={() => handleEditClick(product)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleEditClick(product);
+                  }}
                 >
                   Edit
                 </button>
                 <button
                   className="btn-delete"
-                  onClick={() => handleDeleteClick(product)}
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    handleDeleteClick(product);
+                  }}
                 >
                   Delete
                 </button>
@@ -248,6 +292,13 @@ const Products = () => {
         isOpen={productModalOpen}
         onClose={() => setProductModalOpen(false)}
         productToEdit={productToEdit}
+      />
+
+      {/* View Product Modal */}
+      <ProductDetailModal
+        isOpen={viewModalOpen}
+        onClose={() => setViewModalOpen(false)}
+        product={productToView}
       />
     </div>
   );
