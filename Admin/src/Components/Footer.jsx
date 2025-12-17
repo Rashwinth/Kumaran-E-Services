@@ -8,20 +8,14 @@ function Footer() {
   return (
     <footer className="footer-container">
       <div className="footer-content">
-        <p className="footer-copyright">
-          &copy; {currentYear} Kumaran E-Services. All rights reserved.
-        </p>
+        <div className="footer-left">
+          <span className="footer-copyright">
+            &copy; {currentYear} Kumaran E-Services. All rights reserved.
+          </span>
+        </div>
 
-        <div className="footer-links">
-          <a href="#" className="footer-link">
-            Privacy Policy
-          </a>
-          <a href="#" className="footer-link">
-            Terms of Service
-          </a>
-          <div className="footer-powered">
-            <Powered theme="light" />
-          </div>
+        <div className="footer-right">
+          <Powered theme="light" />
         </div>
       </div>
     </footer>
