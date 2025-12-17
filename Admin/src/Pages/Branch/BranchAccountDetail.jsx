@@ -5,6 +5,7 @@ import { useBranch } from "../../Context/BranchContext";
 import "../../Styles/BranchAccount.css";
 import { toast } from "react-toastify";
 import UniversalDelete from "../../Modals/UniversalDelete";
+import BackButton from "../../Components/BackButton";
 
 const BranchAccountDetail = () => {
   const { id } = useParams();
@@ -82,12 +83,12 @@ const BranchAccountDetail = () => {
       month: "short",
       year: "numeric",
       hour: "2-digit",
-      minute: "2-digit"
+      minute: "2-digit",
     });
   };
 
   // Filtered Accounts for current tab
-  const filteredAccounts = accounts.filter(acc => acc.type === activeTab);
+  const filteredAccounts = accounts.filter((acc) => acc.type === activeTab);
 
   // Handlers
   const handleInputChange = (e) => {
@@ -104,7 +105,7 @@ const BranchAccountDetail = () => {
         balance:
           account.balanceHistory?.length > 0
             ? account.balanceHistory[account.balanceHistory.length - 1]
-              .closingBalance
+                .closingBalance
             : "",
         status: account.status,
       });
@@ -161,22 +162,27 @@ const BranchAccountDetail = () => {
     }
   };
 
-  const displayBranchName = currentBranch ? currentBranch.name : "Branch Details";
+  const displayBranchName = currentBranch
+    ? currentBranch.name
+    : "Branch Details";
   const displayBranchCode = currentBranch ? currentBranch.code : "";
 
   return (
     <div className="account-dashboard">
       {/* 1. Header with Breadcrumb */}
       <div className="detail-header">
-        <Link to="/branch/accounts" className="back-link">
-          <i className="bi bi-arrow-left"></i> All Branches
-        </Link>
+        <BackButton label="Back" />
         <div className="detail-title-row">
           <div>
             <h1 className="detail-title">{displayBranchName}</h1>
-            <span className="detail-subtitle">Account Management • {displayBranchCode}</span>
+            <span className="detail-subtitle">
+              Account Management • {displayBranchCode}
+            </span>
           </div>
-          <button className="primary-action-btn" onClick={() => openModal(null)}>
+          <button
+            className="primary-action-btn"
+            onClick={() => openModal(null)}
+          >
             <i className="bi bi-plus-lg"></i> Add Account
           </button>
         </div>
@@ -184,37 +190,54 @@ const BranchAccountDetail = () => {
 
       {/* 2. Top Stats Overview */}
       <div className="detail-stats-grid">
-        <div className={`detail-stat-card ${activeTab === 'Upi' ? 'active' : ''}`} onClick={() => setActiveTab('Upi')}>
+        <div
+          className={`detail-stat-card ${activeTab === "Upi" ? "active" : ""}`}
+          onClick={() => setActiveTab("Upi")}
+        >
           <div className="stat-icon-wrapper upi">
             <i className="bi bi-phone-fill"></i>
           </div>
           <div className="stat-content">
             <span className="stat-label">Total UPI</span>
-            <span className="stat-value">{formatCurrency(calculateTotalByType("Upi"))}</span>
+            <span className="stat-value">
+              {formatCurrency(calculateTotalByType("Upi"))}
+            </span>
           </div>
-          {activeTab === 'Upi' && <div className="active-indicator"></div>}
+          {activeTab === "Upi" && <div className="active-indicator"></div>}
         </div>
 
-        <div className={`detail-stat-card ${activeTab === 'Cash' ? 'active' : ''}`} onClick={() => setActiveTab('Cash')}>
+        <div
+          className={`detail-stat-card ${activeTab === "Cash" ? "active" : ""}`}
+          onClick={() => setActiveTab("Cash")}
+        >
           <div className="stat-icon-wrapper cash">
             <i className="bi bi-cash-stack"></i>
           </div>
           <div className="stat-content">
             <span className="stat-label">Total Cash</span>
-            <span className="stat-value">{formatCurrency(calculateTotalByType("Cash"))}</span>
+            <span className="stat-value">
+              {formatCurrency(calculateTotalByType("Cash"))}
+            </span>
           </div>
-          {activeTab === 'Cash' && <div className="active-indicator"></div>}
+          {activeTab === "Cash" && <div className="active-indicator"></div>}
         </div>
 
-        <div className={`detail-stat-card ${activeTab === 'Credits' ? 'active' : ''}`} onClick={() => setActiveTab('Credits')}>
+        <div
+          className={`detail-stat-card ${
+            activeTab === "Credits" ? "active" : ""
+          }`}
+          onClick={() => setActiveTab("Credits")}
+        >
           <div className="stat-icon-wrapper credit">
             <i className="bi bi-credit-card-fill"></i>
           </div>
           <div className="stat-content">
             <span className="stat-label">Outstanding Credits</span>
-            <span className="stat-value">{formatCurrency(calculateTotalByType("Credits"))}</span>
+            <span className="stat-value">
+              {formatCurrency(calculateTotalByType("Credits"))}
+            </span>
           </div>
-          {activeTab === 'Credits' && <div className="active-indicator"></div>}
+          {activeTab === "Credits" && <div className="active-indicator"></div>}
         </div>
       </div>
 
@@ -222,7 +245,9 @@ const BranchAccountDetail = () => {
       <div className="detail-content-area">
         <div className="content-header">
           <h3>{activeTab} Accounts</h3>
-          <span className="count-badge">{filteredAccounts.length} Accounts</span>
+          <span className="count-badge">
+            {filteredAccounts.length} Accounts
+          </span>
         </div>
 
         <div className="accounts-list-wrapper">
@@ -231,29 +256,55 @@ const BranchAccountDetail = () => {
               No {activeTab} accounts found.
             </div>
           ) : (
-            filteredAccounts.map(account => (
+            filteredAccounts.map((account) => (
               <div key={account._id} className="detail-account-card">
                 <div className="acc-card-header">
                   <div className="acc-info">
                     <div className={`acc-icon icon-${activeTab.toLowerCase()}`}>
-                      <i className={activeTab === 'Upi' ? 'bi bi-qr-code' : activeTab === 'Cash' ? 'bi bi-safe' : 'bi bi-person-badge'}></i>
+                      <i
+                        className={
+                          activeTab === "Upi"
+                            ? "bi bi-qr-code"
+                            : activeTab === "Cash"
+                            ? "bi bi-safe"
+                            : "bi bi-person-badge"
+                        }
+                      ></i>
                     </div>
                     <div>
                       <h4 className="acc-name">
-                        {activeTab === 'Upi' ? account.upiAccountName : `${activeTab} Account`}
+                        {activeTab === "Upi"
+                          ? account.upiAccountName
+                          : `${activeTab} Account`}
                       </h4>
-                      <span className={`status-badge ${account.status.toLowerCase()}`}>{account.status}</span>
+                      <span
+                        className={`status-badge ${account.status.toLowerCase()}`}
+                      >
+                        {account.status}
+                      </span>
                     </div>
                   </div>
                   <div className="acc-actions">
-                    <button className="btn-icon" onClick={() => openModal(account)}><i className="bi bi-pencil"></i></button>
-                    <button className="btn-icon danger" onClick={() => handleDeleteClick(account._id)}><i className="bi bi-trash"></i></button>
+                    <button
+                      className="btn-icon"
+                      onClick={() => openModal(account)}
+                    >
+                      <i className="bi bi-pencil"></i>
+                    </button>
+                    <button
+                      className="btn-icon danger"
+                      onClick={() => handleDeleteClick(account._id)}
+                    >
+                      <i className="bi bi-trash"></i>
+                    </button>
                   </div>
                 </div>
 
                 <div className="acc-balance-section">
                   <span className="label">Current Balance</span>
-                  <span className="balance">{formatCurrency(getLatestBalance(account.balanceHistory))}</span>
+                  <span className="balance">
+                    {formatCurrency(getLatestBalance(account.balanceHistory))}
+                  </span>
                 </div>
               </div>
             ))
@@ -267,12 +318,12 @@ const BranchAccountDetail = () => {
           </div>
 
           <div className="history-content">
-            {activeTab === 'Upi' ? (
+            {activeTab === "Upi" ? (
               // Grouped by Provider for UPI
               filteredAccounts.length === 0 ? (
                 <div className="text-center p-4">No UPI accounts found.</div>
               ) : (
-                filteredAccounts.map(account => (
+                filteredAccounts.map((account) => (
                   <div key={account._id} className="provider-history-group">
                     <div className="provider-header">
                       <h4>{account.upiAccountName}</h4>
@@ -293,17 +344,28 @@ const BranchAccountDetail = () => {
                             .map((item, idx) => (
                               <tr key={idx}>
                                 <td className="td-date">
-                                  <i className="bi bi-calendar3"></i> {formatDate(item.date)}
+                                  <i className="bi bi-calendar3"></i>{" "}
+                                  {formatDate(item.date)}
                                 </td>
                                 <td className="td-account">
-                                  <span className="account-tag">{account.upiAccountName}</span>
+                                  <span className="account-tag">
+                                    {account.upiAccountName}
+                                  </span>
                                 </td>
-                                <td className="td-amount dim">{formatCurrency(item.openingBalance)}</td>
-                                <td className="td-amount bold">{formatCurrency(item.closingBalance)}</td>
+                                <td className="td-amount dim">
+                                  {formatCurrency(item.openingBalance)}
+                                </td>
+                                <td className="td-amount bold">
+                                  {formatCurrency(item.closingBalance)}
+                                </td>
                               </tr>
                             ))}
                           {account.balanceHistory.length === 0 && (
-                            <tr><td colSpan="4" className="text-center p-4">No history available</td></tr>
+                            <tr>
+                              <td colSpan="4" className="text-center p-4">
+                                No history available
+                              </td>
+                            </tr>
                           )}
                         </tbody>
                       </table>
@@ -324,29 +386,41 @@ const BranchAccountDetail = () => {
                     </tr>
                   </thead>
                   <tbody>
-                    {filteredAccounts.flatMap(acc =>
-                      acc.balanceHistory.map(h => ({
-                        ...h,
-                        accountName: acc.upiAccountName || `${acc.type} Account`,
-                        accountId: acc._id
-                      }))
-                    )
+                    {filteredAccounts
+                      .flatMap((acc) =>
+                        acc.balanceHistory.map((h) => ({
+                          ...h,
+                          accountName:
+                            acc.upiAccountName || `${acc.type} Account`,
+                          accountId: acc._id,
+                        }))
+                      )
                       .sort((a, b) => new Date(b.date) - new Date(a.date))
                       .map((item, idx) => (
                         <tr key={idx}>
                           <td className="td-date">
-                            <i className="bi bi-calendar3"></i> {formatDate(item.date)}
+                            <i className="bi bi-calendar3"></i>{" "}
+                            {formatDate(item.date)}
                           </td>
                           <td className="td-account">
-                            <span className="account-tag">{item.accountName}</span>
+                            <span className="account-tag">
+                              {item.accountName}
+                            </span>
                           </td>
-                          <td className="td-amount dim">{formatCurrency(item.openingBalance)}</td>
-                          <td className="td-amount bold">{formatCurrency(item.closingBalance)}</td>
+                          <td className="td-amount dim">
+                            {formatCurrency(item.openingBalance)}
+                          </td>
+                          <td className="td-amount bold">
+                            {formatCurrency(item.closingBalance)}
+                          </td>
                         </tr>
                       ))}
-                    {filteredAccounts.flatMap(acc => acc.balanceHistory).length === 0 && (
+                    {filteredAccounts.flatMap((acc) => acc.balanceHistory)
+                      .length === 0 && (
                       <tr>
-                        <td colSpan="4" className="text-center p-4">No filtered history available</td>
+                        <td colSpan="4" className="text-center p-4">
+                          No filtered history available
+                        </td>
                       </tr>
                     )}
                   </tbody>
@@ -360,44 +434,86 @@ const BranchAccountDetail = () => {
       {/* Add/Edit Modal */}
       {showAddModal && (
         <div className="modal-overlay" onClick={() => setShowAddModal(false)}>
-          <div className="modal-glass" onClick={e => e.stopPropagation()}>
+          <div className="modal-glass" onClick={(e) => e.stopPropagation()}>
             <div className="modal-header">
               <h3>{editingAccount ? "Edit Account" : "New Account"}</h3>
-              <button className="close-btn" onClick={() => setShowAddModal(false)}><i className="bi bi-x-lg"></i></button>
+              <button
+                className="close-btn"
+                onClick={() => setShowAddModal(false)}
+              >
+                <i className="bi bi-x-lg"></i>
+              </button>
             </div>
             <form onSubmit={handleSubmit} className="modal-form">
               <div className="form-group">
                 <label>Account Type</label>
-                <select name="type" value={formData.type} onChange={handleInputChange} disabled={!!editingAccount} className="glass-input">
+                <select
+                  name="type"
+                  value={formData.type}
+                  onChange={handleInputChange}
+                  disabled={!!editingAccount}
+                  className="glass-input"
+                >
                   <option value="Upi">UPI</option>
                   <option value="Cash">Cash</option>
                   <option value="Credits">Credits</option>
                 </select>
               </div>
 
-              {formData.type === 'Upi' && (
+              {formData.type === "Upi" && (
                 <div className="form-group">
                   <label>Provider Name</label>
-                  <input type="text" name="upiAccountName" placeholder="GooglePay, PhonePe..." value={formData.upiAccountName} onChange={handleInputChange} className="glass-input" required />
+                  <input
+                    type="text"
+                    name="upiAccountName"
+                    placeholder="GooglePay, PhonePe..."
+                    value={formData.upiAccountName}
+                    onChange={handleInputChange}
+                    className="glass-input"
+                    required
+                  />
                 </div>
               )}
 
               <div className="form-group">
-                <label>{editingAccount ? "Balance (Read Only)" : "Opening Balance"}</label>
-                <input type="number" name="balance" value={formData.balance} onChange={handleInputChange} readOnly={!!editingAccount} className="glass-input" placeholder="0.00" />
+                <label>
+                  {editingAccount ? "Balance (Read Only)" : "Opening Balance"}
+                </label>
+                <input
+                  type="number"
+                  name="balance"
+                  value={formData.balance}
+                  onChange={handleInputChange}
+                  readOnly={!!editingAccount}
+                  className="glass-input"
+                  placeholder="0.00"
+                />
               </div>
 
               <div className="form-group">
                 <label>Status</label>
-                <select name="status" value={formData.status} onChange={handleInputChange} className="glass-input">
+                <select
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                  className="glass-input"
+                >
                   <option value="Active">Active</option>
                   <option value="Inactive">Inactive</option>
                 </select>
               </div>
 
               <div className="modal-actions">
-                <button type="button" className="btn-ghost" onClick={() => setShowAddModal(false)}>Cancel</button>
-                <button type="submit" className="btn-primary-glass">Save Account</button>
+                <button
+                  type="button"
+                  className="btn-ghost"
+                  onClick={() => setShowAddModal(false)}
+                >
+                  Cancel
+                </button>
+                <button type="submit" className="btn-primary-glass">
+                  Save Account
+                </button>
               </div>
             </form>
           </div>

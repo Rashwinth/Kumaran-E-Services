@@ -5,6 +5,7 @@ const {
   register,
   GetEmployee,
   deleteEmployee,
+  updateEmployee,
 } = require("../controller/EmployeeController");
 const {
   getAllBranches,
@@ -82,6 +83,12 @@ router.get(
   GetEmployee
 );
 router.delete("/employees/:id", protect, authorize("admin"), deleteEmployee);
+router.put(
+  "/employees/:id",
+  protect,
+  authorize("admin", "manager"),
+  updateEmployee
+);
 
 // Protected routes - Account Management
 router.get("/accounts", protect, authorize("admin", "manager"), getAllAccounts);

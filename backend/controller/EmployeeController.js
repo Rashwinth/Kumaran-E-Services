@@ -2,8 +2,17 @@ const User = require("../models/user");
 
 exports.register = async (req, res) => {
   try {
-    const { name, email, phone, age, password, role, branchCode, branchId } =
-      req.body;
+    const {
+      name,
+      email,
+      phone,
+      age,
+      password,
+      role,
+      branchCode,
+      branchId,
+      EmployeeSalary,
+    } = req.body;
 
     if (!name || !email || !phone || !age || !password || !branchCode) {
       return res.status(400).json({
@@ -39,6 +48,7 @@ exports.register = async (req, res) => {
       password,
       role: role || "staff",
       branchCode,
+      EmployeeSalary,
     });
 
     res.status(201).json({
@@ -126,6 +136,81 @@ exports.deleteEmployee = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error during deletion",
+    });
+  }
+};
+
+exports.updateEmployee = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, email, phone, age, role, EmployeeSalary, password } =
+      req.body;
+
+    let employee = await User.findById(id);
+
+    if (!employee) {
+      return res.status(404).json({
+        success: false,
+        message: "Employee not found",
+      });
+    }
+
+    // Check for email uniqueness if changed
+    if (email && email !== employee.email) {
+      const emailExists = await User.findOne({ email });
+      if (emailExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Email already registered",
+        });
+      }
+    }
+
+    // Check for phone uniqueness if changed
+    if (phone && phone !== employee.phone) {
+      const phoneExists = await User.findOne({ phone });
+      if (phoneExists) {
+        return res.status(400).json({
+          success: false,
+          message: "Phone number already registered",
+        });
+      }
+    }
+
+    // Update fields
+    employee.name = name || employee.name;
+    employee.email = email || employee.email;
+    employee.phone = phone || employee.phone;
+    employee.age = age || employee.age;
+    employee.role = role || employee.role;
+    employee.EmployeeSalary = EmployeeSalary || employee.EmployeeSalary;
+
+    // Only update password if provided
+    if (password) {
+      employee.password = password;
+    }
+
+    await employee.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Employee updated successfully",
+      employee,
+    });
+  } catch (error) {
+    console.error("Update employee error:", error);
+
+    if (error.name === "ValidationError") {
+      const messages = Object.values(error.errors).map((err) => err.message);
+      return res.status(400).json({
+        success: false,
+        message: messages[0],
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error during update",
     });
   }
 };

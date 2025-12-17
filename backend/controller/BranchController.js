@@ -329,7 +329,9 @@ const validateAccessCode = (AccessCode) => {
   const hasUpperCase = /[A-Z]/.test(AccessCode);
   const hasLowerCase = /[a-z]/.test(AccessCode);
   const hasNumber = /\d/.test(AccessCode);
-  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(AccessCode);
+  const hasSpecialChar = /[!@#$%^&*()_+\-=\[\]{};':"\\|,.<>\/?]/.test(
+    AccessCode
+  );
 
   if (!hasUpperCase)
     return "AccessCode must contain at least one uppercase letter";
@@ -337,8 +339,7 @@ const validateAccessCode = (AccessCode) => {
   if (!hasLowerCase)
     return "AccessCode must contain at least one lowercase letter";
 
-  if (!hasNumber)
-    return "AccessCode must contain at least one number";
+  if (!hasNumber) return "AccessCode must contain at least one number";
 
   if (!hasSpecialChar)
     return "AccessCode must contain at least one special character";
@@ -414,8 +415,18 @@ exports.getBranchById = async (req, res) => {
 // ------------------------------------------------------
 exports.createBranch = async (req, res) => {
   try {
-    const { name, code, address, contact, gstNumber, status, AccessCode } =
-      req.body;
+    const {
+      name,
+      code,
+      address,
+      contact,
+      gstNumber,
+      status,
+      AccessCode,
+      OwnerShip,
+      leasedetails,
+      rentdetails,
+    } = req.body;
 
     if (!name || !code || !contact?.phone) {
       return res.status(400).json({
@@ -458,6 +469,9 @@ exports.createBranch = async (req, res) => {
       gstNumber,
       status: status || "Active",
       AccessCode: hashedAccessCode,
+      OwnerShip,
+      leasedetails: OwnerShip === "Leased" ? leasedetails : undefined,
+      rentdetails: OwnerShip === "Rented" ? rentdetails : undefined,
     });
 
     res.status(201).json({
@@ -497,8 +511,18 @@ exports.createBranch = async (req, res) => {
 // ------------------------------------------------------
 exports.updateBranch = async (req, res) => {
   try {
-    const { name, code, address, contact, gstNumber, status, AccessCode } =
-      req.body;
+    const {
+      name,
+      code,
+      address,
+      contact,
+      gstNumber,
+      status,
+      AccessCode,
+      OwnerShip,
+      leasedetails,
+      rentdetails,
+    } = req.body;
 
     let branch = await Branch.findById(req.params.id);
 
@@ -543,9 +567,21 @@ exports.updateBranch = async (req, res) => {
     branch.code = code || branch.code;
     branch.address = address || branch.address;
     branch.contact = contact || branch.contact;
-    branch.gstNumber =
-      gstNumber !== undefined ? gstNumber : branch.gstNumber;
+    branch.gstNumber = gstNumber !== undefined ? gstNumber : branch.gstNumber;
     branch.status = status || branch.status;
+    branch.OwnerShip = OwnerShip || branch.OwnerShip;
+
+    if (branch.OwnerShip === "Leased") {
+      branch.leasedetails = leasedetails || branch.leasedetails;
+      branch.rentdetails = undefined; // Clear rent details if switching to lease
+    } else if (branch.OwnerShip === "Rented") {
+      branch.rentdetails = rentdetails || branch.rentdetails;
+      branch.leasedetails = undefined; // Clear lease details if switching to rent
+    } else {
+      // Owned or other
+      branch.leasedetails = undefined;
+      branch.rentdetails = undefined;
+    }
 
     await branch.save();
 

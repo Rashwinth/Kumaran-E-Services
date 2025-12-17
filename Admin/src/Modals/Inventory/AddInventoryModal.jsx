@@ -38,8 +38,7 @@ const AddInventoryModal = ({
           lowStockThreshold: editItem.lowStockThreshold,
         });
       } else {
-        // Add Mode
-        // Ensure products are loaded if not editing
+    
         if (products.length === 0) getProducts();
 
         setStep(1);

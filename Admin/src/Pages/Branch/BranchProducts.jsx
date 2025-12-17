@@ -4,6 +4,7 @@ import "../../Styles/Products.css";
 import UniversalDelete from "../../Modals/UniversalDelete";
 import AddInventoryModal from "../../Modals/Inventory/AddInventoryModal";
 import { useBranch } from "../../Context/BranchContext";
+import BackButton from "../../Components/BackButton";
 
 const BranchProducts = () => {
   const { id } = useParams();
@@ -135,6 +136,7 @@ const BranchProducts = () => {
     <div className="products-container">
       <div className="products-header">
         <div className="header-left">
+          <BackButton />
           <h1>Products Management</h1>
           <p className="products-count">
             {filteredProducts.length} products found

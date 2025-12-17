@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAccount } from "../../Context/AccountContext";
 import "../../Styles/Accounts.css";
+import BackButton from "../../Components/BackButton";
 
 const AccountManagement = () => {
   const navigate = useNavigate();
@@ -21,9 +22,10 @@ const AccountManagement = () => {
   );
 
   // Filter branches based on search
-  const filteredBranches = branches.filter((branch) =>
-    branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    branch.code.toLowerCase().includes(searchTerm.toLowerCase())
+  const filteredBranches = branches.filter(
+    (branch) =>
+      branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      branch.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getLatestBalance = (balanceHistory) => {
@@ -43,7 +45,7 @@ const AccountManagement = () => {
       (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
       0
     );
-  }
+  };
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
@@ -54,9 +56,16 @@ const AccountManagement = () => {
   };
 
   // Global Stats
-  const globalTotal = accounts.reduce((sum, acc) => sum + getLatestBalance(acc.balanceHistory), 0);
-  const globalUpi = accounts.filter(a => a.type === 'Upi').reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
-  const globalCash = accounts.filter(a => a.type === 'Cash').reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
+  const globalTotal = accounts.reduce(
+    (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
+    0
+  );
+  const globalUpi = accounts
+    .filter((a) => a.type === "Upi")
+    .reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
+  const globalCash = accounts
+    .filter((a) => a.type === "Cash")
+    .reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
 
   // --- Handlers ---
   const handleRowClick = (branchId) => {
@@ -65,19 +74,23 @@ const AccountManagement = () => {
 
   return (
     <div className="account-dashboard">
-
+      <div style={{ marginBottom: "1rem" }}>
+        <BackButton />
+      </div>
       {/* 1. Global Status Hero */}
       <div className="dashboard-hero">
         <div className="hero-content">
           <div>
             <h1 className="hero-title">Financial Overview</h1>
-            <p className="hero-subtitle">Real-time tracking across {branches.length} branches</p>
+            <p className="hero-subtitle">
+              Real-time tracking across {branches.length} branches
+            </p>
           </div>
           <div className="hero-total-group">
             <span className="hero-label">Total System Value</span>
             <div className="value-display">
               <span className="currency-symbol">₹</span>
-              {new Intl.NumberFormat('en-IN').format(globalTotal)}
+              {new Intl.NumberFormat("en-IN").format(globalTotal)}
             </div>
           </div>
         </div>
@@ -90,7 +103,9 @@ const AccountManagement = () => {
           <div className="vertical-divider"></div>
           <div className="mini-stat">
             <span className="label">Total Cash</span>
-            <span className="value text-cash">{formatCurrency(globalCash)}</span>
+            <span className="value text-cash">
+              {formatCurrency(globalCash)}
+            </span>
           </div>
         </div>
       </div>
@@ -108,10 +123,10 @@ const AccountManagement = () => {
         </div>
 
         <div className="filter-tabs">
-          {["All", "Upi", "Cash"].map(type => (
+          {["All", "Upi", "Cash"].map((type) => (
             <button
               key={type}
-              className={`filter-tab ${filterType === type ? 'active' : ''}`}
+              className={`filter-tab ${filterType === type ? "active" : ""}`}
               onClick={() => setFilterType(type)}
             >
               {type === "All" ? "All Accounts" : type}
@@ -133,11 +148,13 @@ const AccountManagement = () => {
         </div>
 
         <div className="list-body">
-          {filteredBranches.map(branch => {
-            const branchAccounts = accounts.filter(acc => acc.branch._id === branch._id);
-            const upiBal = calculateTotalByType(branchAccounts, 'Upi');
-            const cashBal = calculateTotalByType(branchAccounts, 'Cash');
-            const creditBal = calculateTotalByType(branchAccounts, 'Credits');
+          {filteredBranches.map((branch) => {
+            const branchAccounts = accounts.filter(
+              (acc) => acc.branch._id === branch._id
+            );
+            const upiBal = calculateTotalByType(branchAccounts, "Upi");
+            const cashBal = calculateTotalByType(branchAccounts, "Cash");
+            const creditBal = calculateTotalByType(branchAccounts, "Credits");
             const totalBal = calculateBranchTotal(branchAccounts);
 
             // Filter logic
@@ -145,7 +162,11 @@ const AccountManagement = () => {
             if (filterType === "Cash" && cashBal === 0) return null;
 
             return (
-              <div key={branch._id} className="list-row" onClick={() => handleRowClick(branch._id)}>
+              <div
+                key={branch._id}
+                className="list-row"
+                onClick={() => handleRowClick(branch._id)}
+              >
                 <div className="col-branch">
                   <div className="branch-avatar">{branch.name.charAt(0)}</div>
                   <div className="branch-meta">
@@ -155,19 +176,31 @@ const AccountManagement = () => {
                 </div>
 
                 <div className="col-stat" data-label="UPI">
-                  <span className={`balance-pill ${upiBal > 0 ? 'pill-upi' : 'pill-empty'}`}>
+                  <span
+                    className={`balance-pill ${
+                      upiBal > 0 ? "pill-upi" : "pill-empty"
+                    }`}
+                  >
                     {formatCurrency(upiBal)}
                   </span>
                 </div>
 
                 <div className="col-stat" data-label="Cash">
-                  <span className={`balance-pill ${cashBal > 0 ? 'pill-cash' : 'pill-empty'}`}>
+                  <span
+                    className={`balance-pill ${
+                      cashBal > 0 ? "pill-cash" : "pill-empty"
+                    }`}
+                  >
                     {formatCurrency(cashBal)}
                   </span>
                 </div>
 
                 <div className="col-stat" data-label="Credits">
-                  <span className={`balance-pill ${creditBal > 0 ? 'pill-credit' : 'pill-empty'}`}>
+                  <span
+                    className={`balance-pill ${
+                      creditBal > 0 ? "pill-credit" : "pill-empty"
+                    }`}
+                  >
                     {formatCurrency(creditBal)}
                   </span>
                 </div>
@@ -193,7 +226,6 @@ const AccountManagement = () => {
           )}
         </div>
       </div>
-
     </div>
   );
 };

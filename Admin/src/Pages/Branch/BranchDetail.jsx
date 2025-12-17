@@ -3,6 +3,7 @@ import { useParams, useNavigate, Link } from "react-router-dom";
 import "../../Styles/BranchDetail.css";
 import { useBranch } from "../../Context/BranchContext";
 import { useAuth } from "../../Context/AuthContext";
+import BackButton from "../../Components/BackButton";
 
 const BranchDetail = () => {
   const { id } = useParams();
@@ -52,14 +53,27 @@ const BranchDetail = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value,
-        },
-      }));
+      const parts = name.split(".");
+      if (parts.length === 2) {
+        setFormData((prev) => ({
+          ...prev,
+          [parts[0]]: {
+            ...prev[parts[0]],
+            [parts[1]]: value,
+          },
+        }));
+      } else if (parts.length === 3) {
+        setFormData((prev) => ({
+          ...prev,
+          [parts[0]]: {
+            ...prev[parts[0]],
+            [parts[1]]: {
+              ...prev[parts[0]][parts[1]],
+              [parts[2]]: value,
+            },
+          },
+        }));
+      }
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -100,22 +114,8 @@ const BranchDetail = () => {
     <div className="branch-detail-container">
       <div className="branch-detail-header">
         <div className="header-left">
-          <Link to="/branch" className="back-button">
-            <svg
-              viewBox="0 0 24 24"
-              fill="none"
-              xmlns="http://www.w3.org/2000/svg"
-            >
-              <path
-                d="M19 12H5M5 12L12 19M5 12L12 5"
-                stroke="currentColor"
-                strokeWidth="2"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-              />
-            </svg>
-            Back to Branches
-          </Link>
+          {/* BackButton replaces Link */}
+          <BackButton label="Back" />
           <div className="branch-title">
             <h1>{branch.name}</h1>
 
@@ -350,6 +350,214 @@ const BranchDetail = () => {
                 <p>{branch.contact.email}</p>
               )}
             </div>
+          </div>
+        </div>
+
+        <div className="detail-section">
+          <h2>Ownership Details</h2>
+          <div className="detail-grid">
+            <div className="detail-item">
+              <label>Ownership Type</label>
+              {isEditing ? (
+                <select
+                  name="OwnerShip"
+                  value={formData.OwnerShip}
+                  onChange={handleInputChange}
+                >
+                  <option value="Owned">Owned</option>
+                  <option value="Leased">Leased</option>
+                  <option value="Rented">Rented</option>
+                </select>
+              ) : (
+                <p>{branch.OwnerShip}</p>
+              )}
+            </div>
+
+            {/* Leased Details */}
+            {(isEditing ? formData.OwnerShip : branch.OwnerShip) ===
+              "Leased" && (
+              <>
+                <div className="detail-item">
+                  <label>Lease Holder Name</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="leasedetails.leaseholdername"
+                      value={formData.leasedetails?.leaseholdername || ""}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{branch.leasedetails?.leaseholdername || "-"}</p>
+                  )}
+                </div>
+                <div className="detail-item">
+                  <label>Contact</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="leasedetails.leaseholdercontact"
+                      value={formData.leasedetails?.leaseholdercontact || ""}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{branch.leasedetails?.leaseholdercontact || "-"}</p>
+                  )}
+                </div>
+                <div className="detail-item full-width">
+                  <label>Address</label>
+                  {isEditing ? (
+                    <div className="nested-inputs">
+                      <input
+                        type="text"
+                        name="leasedetails.leaseholderaddress.street"
+                        value={
+                          formData.leasedetails?.leaseholderaddress?.street ||
+                          ""
+                        }
+                        onChange={handleInputChange}
+                        placeholder="Street"
+                        style={{ marginBottom: "5px" }}
+                      />
+                      <div style={{ display: "flex", gap: "10px" }}>
+                        <input
+                          type="text"
+                          name="leasedetails.leaseholderaddress.city"
+                          value={
+                            formData.leasedetails?.leaseholderaddress?.city ||
+                            ""
+                          }
+                          onChange={handleInputChange}
+                          placeholder="City"
+                        />
+                        <input
+                          type="text"
+                          name="leasedetails.leaseholderaddress.pincode"
+                          value={
+                            formData.leasedetails?.leaseholderaddress
+                              ?.pincode || ""
+                          }
+                          onChange={handleInputChange}
+                          placeholder="Pincode"
+                        />
+                      </div>
+                    </div>
+                  ) : (
+                    <p>
+                      {branch.leasedetails?.leaseholderaddress?.street},{" "}
+                      {branch.leasedetails?.leaseholderaddress?.city} -{" "}
+                      {branch.leasedetails?.leaseholderaddress?.pincode}
+                    </p>
+                  )}
+                </div>
+                <div className="detail-item">
+                  <label>Lease Amount</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="leasedetails.Leasedamount"
+                      value={formData.leasedetails?.Leasedamount || ""}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{branch.leasedetails?.Leasedamount || "-"}</p>
+                  )}
+                </div>
+                <div className="detail-item">
+                  <label>Frequency</label>
+                  {isEditing ? (
+                    <select
+                      name="leasedetails.LeasedFrequency"
+                      value={
+                        formData.leasedetails?.LeasedFrequency || "Monthly"
+                      }
+                      onChange={handleInputChange}
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Yearly">Yearly</option>
+                      <option value="One Time">One Time</option>
+                    </select>
+                  ) : (
+                    <p>{branch.leasedetails?.LeasedFrequency || "-"}</p>
+                  )}
+                </div>
+                <div className="detail-item full-width">
+                  <label>Lease Period</label>
+                  {isEditing ? (
+                    <div style={{ display: "flex", gap: "10px" }}>
+                      <input
+                        type="date"
+                        name="leasedetails.LeasedPeriod.LeasedStartDate"
+                        value={
+                          formData.leasedetails?.LeasedPeriod
+                            ?.LeasedStartDate || ""
+                        }
+                        onChange={handleInputChange}
+                      />
+                      <input
+                        type="date"
+                        name="leasedetails.LeasedPeriod.LeasedEndDate"
+                        value={
+                          formData.leasedetails?.LeasedPeriod?.LeasedEndDate ||
+                          ""
+                        }
+                        onChange={handleInputChange}
+                      />
+                    </div>
+                  ) : (
+                    <p>
+                      {branch.leasedetails?.LeasedPeriod?.LeasedStartDate
+                        ? new Date(
+                            branch.leasedetails.LeasedPeriod.LeasedStartDate
+                          ).toLocaleDateString()
+                        : "-"}{" "}
+                      -{" "}
+                      {branch.leasedetails?.LeasedPeriod?.LeasedEndDate
+                        ? new Date(
+                            branch.leasedetails.LeasedPeriod.LeasedEndDate
+                          ).toLocaleDateString()
+                        : "-"}
+                    </p>
+                  )}
+                </div>
+              </>
+            )}
+
+            {/* Rented Details */}
+            {(isEditing ? formData.OwnerShip : branch.OwnerShip) ===
+              "Rented" && (
+              <>
+                <div className="detail-item">
+                  <label>Rent Amount</label>
+                  {isEditing ? (
+                    <input
+                      type="text"
+                      name="rentdetails.rentamount"
+                      value={formData.rentdetails?.rentamount || ""}
+                      onChange={handleInputChange}
+                    />
+                  ) : (
+                    <p>{branch.rentdetails?.rentamount || "-"}</p>
+                  )}
+                </div>
+                <div className="detail-item">
+                  <label>Frequency</label>
+                  {isEditing ? (
+                    <select
+                      name="rentdetails.rentfrequency"
+                      value={formData.rentdetails?.rentfrequency || "Monthly"}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Monthly">Monthly</option>
+                      <option value="Quarterly">Quarterly</option>
+                      <option value="Yearly">Yearly</option>
+                    </select>
+                  ) : (
+                    <p>{branch.rentdetails?.rentfrequency || "-"}</p>
+                  )}
+                </div>
+              </>
+            )}
           </div>
         </div>
 

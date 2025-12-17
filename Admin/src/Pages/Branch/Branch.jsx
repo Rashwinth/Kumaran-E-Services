@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
 import "../../Styles/Branch.css";
 import { useBranch } from "../../Context/BranchContext";
+import BackButton from "../../Components/BackButton";
 import "bootstrap/dist/css/bootstrap.min.css";
 import UniversalDelete from "../../Modals/UniversalDelete";
 
@@ -37,6 +38,29 @@ const Branch = () => {
     gstNumber: "",
     status: "Active",
     AccessCode: "",
+    OwnerShip: "Owned",
+    leasedetails: {
+      leaseholdername: "",
+      leaseholdercontact: "",
+      leaseholderemail: "",
+      leaseholderaddress: {
+        street: "",
+        city: "",
+        state: "",
+        country: "India",
+        pincode: "",
+      },
+      Leasedamount: "",
+      LeasedFrequency: "Monthly",
+      LeasedPeriod: {
+        LeasedStartDate: "",
+        LeasedEndDate: "",
+      },
+    },
+    rentdetails: {
+      rentamount: "",
+      rentfrequency: "Monthly",
+    },
   });
 
   const validateAccessCode = (AccessCode) => {
@@ -86,6 +110,29 @@ const Branch = () => {
       gstNumber: "",
       status: "Active",
       AccessCode: "",
+      OwnerShip: "Owned",
+      leasedetails: {
+        leaseholdername: "",
+        leaseholdercontact: "",
+        leaseholderemail: "",
+        leaseholderaddress: {
+          street: "",
+          city: "",
+          state: "",
+          country: "India",
+          pincode: "",
+        },
+        Leasedamount: "",
+        LeasedFrequency: "Monthly",
+        LeasedPeriod: {
+          LeasedStartDate: "",
+          LeasedEndDate: "",
+        },
+      },
+      rentdetails: {
+        rentamount: "",
+        rentfrequency: "Monthly",
+      },
     });
     setShowModal(true);
   };
@@ -101,14 +148,27 @@ const Branch = () => {
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     if (name.includes(".")) {
-      const [parent, child] = name.split(".");
-      setFormData((prev) => ({
-        ...prev,
-        [parent]: {
-          ...prev[parent],
-          [child]: value,
-        },
-      }));
+      const parts = name.split(".");
+      if (parts.length === 2) {
+        setFormData((prev) => ({
+          ...prev,
+          [parts[0]]: {
+            ...prev[parts[0]],
+            [parts[1]]: value,
+          },
+        }));
+      } else if (parts.length === 3) {
+        setFormData((prev) => ({
+          ...prev,
+          [parts[0]]: {
+            ...prev[parts[0]],
+            [parts[1]]: {
+              ...prev[parts[0]][parts[1]],
+              [parts[2]]: value,
+            },
+          },
+        }));
+      }
     } else {
       setFormData((prev) => ({
         ...prev,
@@ -167,7 +227,10 @@ const Branch = () => {
   return (
     <div className="branch-container">
       <div className="branch-header">
-        <h1>Branch Management</h1>
+        <div style={{ display: "flex", flexDirection: "column", gap: "5px" }}>
+          <BackButton />
+          <h1>Branch Management</h1>
+        </div>
         <button className="add-branch-btn" onClick={handleOpenModal}>
           <i className="bi bi-plus-circle-fill"></i>
           Add New Branch
@@ -460,6 +523,189 @@ const Branch = () => {
                       </select>
                     </div>
                   </div>
+                </div>
+
+                <div className="form-section">
+                  <h3 className="section-title">
+                    <i className="bi bi-building-gear"></i>
+                    Ownership Details
+                  </h3>
+                  <div className="form-group">
+                    <label>
+                      <i className="bi bi-houses-fill"></i>
+                      Ownership Type
+                    </label>
+                    <select
+                      name="OwnerShip"
+                      value={formData.OwnerShip}
+                      onChange={handleInputChange}
+                    >
+                      <option value="Owned">Owned</option>
+                      <option value="Leased">Leased</option>
+                      <option value="Rented">Rented</option>
+                    </select>
+                  </div>
+
+                  {formData.OwnerShip === "Leased" && (
+                    <div className="nested-form-group">
+                      <h4 className="sub-section-title">
+                        Lease Holder Details
+                      </h4>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Name</label>
+                          <input
+                            type="text"
+                            name="leasedetails.leaseholdername"
+                            value={formData.leasedetails.leaseholdername}
+                            onChange={handleInputChange}
+                            placeholder="Lease holder name"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Contact</label>
+                          <input
+                            type="text"
+                            name="leasedetails.leaseholdercontact"
+                            value={formData.leasedetails.leaseholdercontact}
+                            onChange={handleInputChange}
+                            placeholder="Contact number"
+                          />
+                        </div>
+                      </div>
+                      <div className="form-group">
+                        <label>Email</label>
+                        <input
+                          type="email"
+                          name="leasedetails.leaseholderemail"
+                          value={formData.leasedetails.leaseholderemail}
+                          onChange={handleInputChange}
+                          placeholder="Email address"
+                        />
+                      </div>
+                      <h5 className="mini-title mt-2">Lease Holder Address</h5>
+                      <div className="form-group">
+                        <label>Street</label>
+                        <input
+                          type="text"
+                          name="leasedetails.leaseholderaddress.street"
+                          value={
+                            formData.leasedetails.leaseholderaddress.street
+                          }
+                          onChange={handleInputChange}
+                          placeholder="Street Address"
+                        />
+                      </div>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>City</label>
+                          <input
+                            type="text"
+                            name="leasedetails.leaseholderaddress.city"
+                            value={
+                              formData.leasedetails.leaseholderaddress.city
+                            }
+                            onChange={handleInputChange}
+                            placeholder="City"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Pincode</label>
+                          <input
+                            type="text"
+                            name="leasedetails.leaseholderaddress.pincode"
+                            value={
+                              formData.leasedetails.leaseholderaddress.pincode
+                            }
+                            onChange={handleInputChange}
+                            placeholder="Pincode"
+                          />
+                        </div>
+                      </div>
+
+                      <h5 className="mini-title mt-2">Lease Terms</h5>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Lease Amount</label>
+                          <input
+                            type="text"
+                            name="leasedetails.Leasedamount"
+                            value={formData.leasedetails.Leasedamount}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 50000"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Frequency</label>
+                          <select
+                            name="leasedetails.LeasedFrequency"
+                            value={formData.leasedetails.LeasedFrequency}
+                            onChange={handleInputChange}
+                          >
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                            <option value="One Time">One Time</option>
+                          </select>
+                        </div>
+                      </div>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Start Date</label>
+                          <input
+                            type="date"
+                            name="leasedetails.LeasedPeriod.LeasedStartDate"
+                            value={
+                              formData.leasedetails.LeasedPeriod
+                                ?.LeasedStartDate
+                            }
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>End Date</label>
+                          <input
+                            type="date"
+                            name="leasedetails.LeasedPeriod.LeasedEndDate"
+                            value={
+                              formData.leasedetails.LeasedPeriod?.LeasedEndDate
+                            }
+                            onChange={handleInputChange}
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formData.OwnerShip === "Rented" && (
+                    <div className="nested-form-group">
+                      <h4 className="sub-section-title">Rent Details</h4>
+                      <div className="form-row">
+                        <div className="form-group">
+                          <label>Rent Amount</label>
+                          <input
+                            type="text"
+                            name="rentdetails.rentamount"
+                            value={formData.rentdetails.rentamount}
+                            onChange={handleInputChange}
+                            placeholder="e.g. 15000"
+                          />
+                        </div>
+                        <div className="form-group">
+                          <label>Frequency</label>
+                          <select
+                            name="rentdetails.rentfrequency"
+                            value={formData.rentdetails.rentfrequency}
+                            onChange={handleInputChange}
+                          >
+                            <option value="Monthly">Monthly</option>
+                            <option value="Quarterly">Quarterly</option>
+                            <option value="Yearly">Yearly</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                  )}
                 </div>
 
                 <div className="form-section">

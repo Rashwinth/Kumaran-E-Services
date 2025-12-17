@@ -490,3 +490,12 @@
     grid-template-columns: 1fr;
   }
 }
+
+.branch-detail-container .nested-inputs {
+  background: #f1f5f9;
+  padding: 0.75rem;
+  border-radius: 6px;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}

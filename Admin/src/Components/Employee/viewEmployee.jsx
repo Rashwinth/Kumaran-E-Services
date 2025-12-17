@@ -6,7 +6,7 @@ import { useAuth } from "../../Context/AuthContext";
 import "bootstrap/dist/css/bootstrap.min.css";
 import UniversalDelete from "../../Modals/UniversalDelete";
 
-const ViewEmployee = ({ BranchCode }) => {
+const ViewEmployee = ({ BranchCode, onEdit }) => {
   const { user, accessToken } = useAuth();
   const [employees, setEmployees] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -147,11 +147,21 @@ const ViewEmployee = ({ BranchCode }) => {
                   <i className="bi bi-calendar"></i>
                   <span>{employee.age} years old</span>
                 </div>
+                {employee.EmployeeSalary && (
+                  <div className="info-row">
+                    <i className="bi bi-cash"></i>
+                    <span>₹{employee.EmployeeSalary}</span>
+                  </div>
+                )}
               </div>
 
               <div className="card-footer">
                 <div className="action-buttons">
-                  <button className="action-btn edit-btn" title="Edit">
+                  <button
+                    className="action-btn edit-btn"
+                    title="Edit"
+                    onClick={() => onEdit && onEdit(employee)}
+                  >
                     <i className="bi bi-pencil-square fw-bold fs-5"></i> Edit
                   </button>
                   <button

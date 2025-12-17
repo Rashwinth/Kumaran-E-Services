@@ -31,6 +31,43 @@ const branchSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    OwnerShip: {
+      type: String,
+      enum: ["Owned", "Leased", "Rented"],
+      default: "Owned",
+    },
+    leasedetails: {
+      leaseholdername: { type: String, trim: true },
+      leaseholdercontact: { type: String, trim: true },
+      leaseholderemail: { type: String, trim: true },
+      leaseholderaddress: {
+        street: { type: String, trim: true },
+        city: { type: String, trim: true },
+        state: { type: String, trim: true },
+        country: { type: String, trim: true },
+        pincode: { type: String, trim: true },
+      },
+      Leasedamount: { type: String, trim: true },
+      LeasedFrequency: {
+        type: String,
+        trim: true,
+        enum: ["Monthly", "Quarterly", "Yearly", "One Time"],
+        default: "Monthly",
+      },
+      LeasedPeriod: {
+        LeasedStartDate: { type: String, trim: true },
+        LeasedEndDate: { type: String, trim: true },
+      },
+    },
+    rentdetails: {
+      rentamount: { type: String, trim: true },
+      rentfrequency: {
+        type: String,
+        trim: true,
+        enum: ["Monthly", "Quarterly", "Yearly"],
+        default: "Monthly",
+      },
+    },
     status: {
       type: String,
       enum: ["Active", "Inactive"],

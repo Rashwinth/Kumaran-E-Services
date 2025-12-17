@@ -3,6 +3,7 @@ import "../Styles/Products.css";
 import UniversalDelete from "../Modals/UniversalDelete";
 import ProductModal from "../Modals/Product/ProductModal";
 import ProductDetailModal from "../Modals/Product/ProductDetailModal";
+import BackButton from "../Components/BackButton";
 import { useProduct } from "../Context/ProductContext";
 
 const Products = () => {
@@ -96,6 +97,7 @@ const Products = () => {
     <div className="products-container">
       <div className="products-header">
         <div className="header-left">
+          <BackButton />
           <h1>Products Management</h1>
           <p className="products-count">
             {filteredProducts.length} products found

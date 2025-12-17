@@ -27,6 +27,7 @@ const userSchema = new mongoose.Schema(
       trim: true,
       uppercase: true,
     },
+    EmployeeSalary: { type: Number, trim: true, default: 0 },
     phone: {
       type: String,
       required: [true, "Please provide a phone number"],
@@ -108,7 +109,7 @@ userSchema.pre("save", async function (next) {
         .model("User")
         .countDocuments({ branchCode: this.branchCode });
       this.employeeId = `${this.branchCode}-EMP${String(count + 1).padStart(
-       2,
+        2,
         "0"
       )}`;
     }

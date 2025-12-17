@@ -18,7 +18,7 @@ import BranchDetail from "./Pages/Branch/BranchDetail";
 import Products from "./Pages/Products";
 
 // Context
-import { AuthProvider } from "./Context/AuthContext";
+
 import LoadingPage from "./Components/Loading/LoadingPage";
 import Header from "./Components/Header";
 import Footer from "./Components/Footer";
@@ -72,10 +72,6 @@ function AppContent() {
 
             {/* Employee route */}
             <Route path="/branch/:id/employee" element={<Employee />} />
-            <Route
-              path="/branch/:id/employee/add-employee"
-              element={<AddEmployeeModal />}
-            />
 
             {/* product Route */}
             <Route path="/products" element={<Products />} />
@@ -99,10 +95,10 @@ function AppContent() {
 
 function App() {
   return (
-    <AuthProvider>
+    <>
       <GlobalScrollFix />
       <AppContent />
-    </AuthProvider>
+    </>
   );
 }
 

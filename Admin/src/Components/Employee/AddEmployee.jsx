@@ -457,18 +457,20 @@
 
 // export default AddEmployee;
 
-
 import { useState, useEffect } from "react";
-import { useParams, useNavigate } from "react-router-dom";
 import { toast } from "react-toastify";
 import axios from "axios";
 import "../../Styles/AddEmployee.css"; // New CSS file for modal
 import { useAuth } from "../../Context/AuthContext";
 import { useBranch } from "../../Context/BranchContext";
 
-const AddEmployeeModal = () => {
-  const { id } = useParams(); // Branch ID
-  const navigate = useNavigate();
+const AddEmployeeModal = ({
+  isOpen,
+  onClose,
+  branchId,
+  onSuccess,
+  employeeToEdit,
+}) => {
   const [branch, setBranch] = useState(null);
   const { branches, getBranches } = useBranch();
 
@@ -480,8 +482,9 @@ const AddEmployeeModal = () => {
     password: "",
     confirmPassword: "",
     role: "staff",
-    branchId: id,
+    branchId: branchId,
     branchCode: "",
+    EmployeeSalary: "",
   });
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
@@ -490,26 +493,56 @@ const AddEmployeeModal = () => {
   const { accessToken, user } = useAuth();
   const userId = user.id;
 
-  // Fetch branch data on component mount
+  // Initialize form when opening
   useEffect(() => {
-    if (!accessToken) return;
+    if (!accessToken || !isOpen) return;
 
+    // Set branch info
     if (branches.length > 0) {
-      const foundBranch = branches.find((b) => b._id === id);
+      const foundBranch = branches.find((b) => b._id === branchId);
       if (foundBranch) {
         setBranch(foundBranch);
+        // Initial form setup (will be overridden if editing)
         setFormData((prev) => ({
           ...prev,
           branchCode: foundBranch.code,
           branchId: foundBranch._id,
         }));
-      } else {
-        navigate("/employee");
       }
     } else {
       getBranches();
     }
-  }, [id, branches, accessToken, getBranches, navigate]);
+
+    // Pre-fill if editing
+    if (employeeToEdit) {
+      setFormData({
+        name: employeeToEdit.name || "",
+        email: employeeToEdit.email || "",
+        phone: employeeToEdit.phone || "",
+        age: employeeToEdit.age || "",
+        role: employeeToEdit.role || "staff",
+        branchId: branchId,
+        branchCode: employeeToEdit.branchCode || "",
+        EmployeeSalary: employeeToEdit.EmployeeSalary || "",
+        password: "", // Don't pre-fill password
+        confirmPassword: "",
+      });
+    } else {
+      // Reset if adding new
+      setFormData({
+        name: "",
+        email: "",
+        phone: "",
+        age: "",
+        password: "",
+        confirmPassword: "",
+        role: "staff",
+        branchId: branchId,
+        branchCode: branch?.code || "", // fallback if branch not set yet
+        EmployeeSalary: "",
+      });
+    }
+  }, [branchId, branches, accessToken, getBranches, isOpen, employeeToEdit]);
 
   // Password strength checker
   const [passwordStrength, setPasswordStrength] = useState({
@@ -541,6 +574,9 @@ const AddEmployeeModal = () => {
   };
 
   const validatePassword = () => {
+    // Skip password validation if editing and password field is empty
+    if (employeeToEdit && !formData.password) return true;
+
     const { minLength, hasUppercase, hasLowercase, hasNumber, hasSpecialChar } =
       passwordStrength;
 
@@ -569,23 +605,18 @@ const AddEmployeeModal = () => {
     return true;
   };
 
-  const handleClose = () => {
-    navigate(`/branch/${id}/employee`);
-  };
-
   const handleSubmit = async (e) => {
     e.preventDefault();
 
     // Validation
-    if (
-      !formData.name ||
-      !formData.email ||
-      !formData.phone ||
-      !formData.age ||
-      !formData.password ||
-      !formData.confirmPassword
-    ) {
-      toast.error("Please fill in all fields");
+    if (!formData.name || !formData.email || !formData.phone || !formData.age) {
+      toast.error("Please fill in all details fields");
+      return;
+    }
+
+    // Password required only for new employees
+    if (!employeeToEdit && (!formData.password || !formData.confirmPassword)) {
+      toast.error("Password is required for new employees");
       return;
     }
 
@@ -605,11 +636,12 @@ const AddEmployeeModal = () => {
       return;
     }
 
-    if (!validatePassword()) {
+    // Validate password only if provided (or required)
+    if (formData.password && !validatePassword()) {
       return;
     }
 
-    if (formData.password !== formData.confirmPassword) {
+    if (formData.password && formData.password !== formData.confirmPassword) {
       toast.error("Passwords do not match");
       return;
     }
@@ -617,26 +649,42 @@ const AddEmployeeModal = () => {
     setLoading(true);
 
     try {
-      const result = await axios.post(
-        `${baseURL}/registeremployee/${userId}`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${accessToken}`,
-          },
-        }
-      );
+      let result;
+      if (employeeToEdit) {
+        // Update existing employee
+        result = await axios.put(
+          `${baseURL}/employees/${employeeToEdit._id}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+      } else {
+        // Register new employee
+        result = await axios.post(
+          `${baseURL}/registeremployee/${userId}`,
+          formData,
+          {
+            headers: {
+              Authorization: `Bearer ${accessToken}`,
+            },
+          }
+        );
+      }
 
       if (result.data.success) {
-        toast.success("Employee registered successfully!");
-
-        // Redirect back to employee page
-        setTimeout(() => {
-          navigate(`/branch/${id}/employee`);
-        }, 1500);
+        toast.success(
+          employeeToEdit
+            ? "Employee updated successfully!"
+            : "Employee registered successfully!"
+        );
+        if (onSuccess) onSuccess();
+        onClose();
       }
     } catch (error) {
-      console.error("Registration error:", error);
+      console.error("Operation error:", error);
       toast.error(
         error.response?.data?.message || "An error occurred. Please try again."
       );
@@ -645,24 +693,30 @@ const AddEmployeeModal = () => {
     }
   };
 
-  if (!branch) return null;
+  if (!isOpen || !branch) return null;
 
   return (
-    <div className="modal-overlay" onClick={handleClose}>
+    <div className="modal-overlay" onClick={onClose}>
       <div className="modal-content" onClick={(e) => e.stopPropagation()}>
         <div className="modal-header">
           <div className="header-title">
             <div className="logo-icon">
-              <i className="bi bi-person-plus-fill"></i>
+              <i
+                className={`bi ${
+                  employeeToEdit ? "bi-pencil-square" : "bi-person-plus-fill"
+                }`}
+              ></i>
             </div>
-            <h2>Add New Employee</h2>
+            <h2>{employeeToEdit ? "Edit Employee" : "Add New Employee"}</h2>
           </div>
-          <button className="close-modal-btn" onClick={handleClose}>
+          <button className="close-modal-btn" onClick={onClose}>
             <i className="bi bi-x-lg"></i>
           </button>
         </div>
         <p className="modal-subtitle">
-          Register a new staff member for {branch.name} ({branch.code})
+          {employeeToEdit
+            ? `Update details for ${employeeToEdit.name}`
+            : `Register a new staff member for ${branch.name} (${branch.code})`}
         </p>
 
         <form onSubmit={handleSubmit} className="employee-form-modal">
@@ -738,22 +792,40 @@ const AddEmployeeModal = () => {
           </div>
 
           {/* Full Width Age Field */}
-          <div className="form-group full-width">
-            <label htmlFor="age">
-              <i className="bi bi-calendar-check-fill"></i>
-              Age
-            </label>
-            <input
-              type="number"
-              id="age"
-              name="age"
-              value={formData.age}
-              onChange={handleChange}
-              placeholder="Enter age (18-100)"
-              required
-              min="18"
-              max="100"
-            />
+          <div className="form-row">
+            <div className="form-group">
+              <label htmlFor="age">
+                <i className="bi bi-calendar-check-fill"></i>
+                Age
+              </label>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                placeholder="Enter age (18-100)"
+                required
+                min="18"
+                max="100"
+              />
+            </div>
+
+            <div className="form-group">
+              <label htmlFor="EmployeeSalary">
+                <i className="bi bi-cash"></i>
+                Salary
+              </label>
+              <input
+                type="number"
+                id="EmployeeSalary"
+                name="EmployeeSalary"
+                value={formData.EmployeeSalary}
+                onChange={handleChange}
+                placeholder="Enter monthly salary"
+                min="0"
+              />
+            </div>
           </div>
 
           <div className="form-row">
@@ -769,8 +841,12 @@ const AddEmployeeModal = () => {
                   name="password"
                   value={formData.password}
                   onChange={handleChange}
-                  placeholder="Create a strong password"
-                  required
+                  placeholder={
+                    employeeToEdit
+                      ? "Leave blank to keep current password"
+                      : "Create a strong password"
+                  }
+                  required={!employeeToEdit}
                 />
                 <button
                   type="button"
@@ -799,7 +875,7 @@ const AddEmployeeModal = () => {
                   value={formData.confirmPassword}
                   onChange={handleChange}
                   placeholder="Confirm password"
-                  required
+                  required={!employeeToEdit && !!formData.password} // Required if adding new OR if password field has value during edit
                 />
                 <button
                   type="button"
@@ -888,11 +964,7 @@ const AddEmployeeModal = () => {
           )}
 
           <div className="form-actions">
-            <button
-              type="button"
-              className="cancel-btn"
-              onClick={handleClose}
-            >
+            <button type="button" className="cancel-btn" onClick={onClose}>
               <i className="bi bi-x-circle-fill"></i>
               Cancel
             </button>
@@ -900,12 +972,20 @@ const AddEmployeeModal = () => {
               {loading ? (
                 <>
                   <span className="spinner"></span>
-                  Adding Employee...
+                  {employeeToEdit
+                    ? "Updating Employee..."
+                    : "Adding Employee..."}
                 </>
               ) : (
                 <>
-                  <i className="bi bi-person-plus-fill"></i>
-                  Add Employee
+                  <i
+                    className={`bi ${
+                      employeeToEdit
+                        ? "bi-check-circle-fill"
+                        : "bi-person-plus-fill"
+                    }`}
+                  ></i>
+                  {employeeToEdit ? "Update Employee" : "Add Employee"}
                 </>
               )}
             </button>

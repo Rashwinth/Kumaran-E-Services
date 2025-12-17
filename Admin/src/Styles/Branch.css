@@ -111,8 +111,8 @@
 .branch-container .branch-info {
   display: flex;
   flex-direction: column;
-  gap: 1.25rem;  align-items: flex-start;
-
+  gap: 1.25rem;
+  align-items: flex-start;
 }
 
 .branch-container .info-item {
@@ -533,4 +533,27 @@
   .branch-container .section-title {
     font-size: 1rem;
   }
+}
+
+.branch-container .nested-form-group {
+  background: #f8fafc;
+  padding: 1rem;
+  border-radius: 8px;
+  border: 1px solid #e2e8f0;
+  margin-top: 1rem;
+}
+
+.branch-container .sub-section-title {
+  font-size: 1rem;
+  color: #475569;
+  font-weight: 600;
+  margin-bottom: 1rem;
+  margin-top: 0;
+}
+
+.branch-container .mini-title {
+  font-size: 0.875rem;
+  color: #64748b;
+  font-weight: 600;
+  margin: 1rem 0 0.5rem 0;
 }
