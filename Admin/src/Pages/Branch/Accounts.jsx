@@ -6,15 +6,24 @@ import "../../Styles/Accounts.css";
 const AccountManagement = () => {
   const navigate = useNavigate();
   const { accounts, getAccounts, loading } = useAccount();
-  const [historyModalAccount, setHistoryModalAccount] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [filterType, setFilterType] = useState("All"); // All, Upi, Cash
 
   useEffect(() => {
     getAccounts();
   }, [getAccounts]);
 
+  // --- Data Processing ---
+
   // Extract unique branches
   const branches = Array.from(
     new Map(accounts.map((acc) => [acc.branch._id, acc.branch])).values()
+  );
+
+  // Filter branches based on search
+  const filteredBranches = branches.filter((branch) =>
+    branch.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    branch.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   const getLatestBalance = (balanceHistory) => {
@@ -28,6 +37,14 @@ const AccountManagement = () => {
       .reduce((sum, acc) => sum + getLatestBalance(acc.balanceHistory), 0);
   };
 
+  // Safe safely calculates total for a branch
+  const calculateBranchTotal = (branchAccounts) => {
+    return branchAccounts.reduce(
+      (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
+      0
+    );
+  }
+
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -36,267 +53,147 @@ const AccountManagement = () => {
     }).format(amount);
   };
 
-  const formatDate = (dateString) => {
-    return new Date(dateString).toLocaleDateString("en-IN", {
-      day: "2-digit",
-      month: "short",
-      year: "numeric",
-    });
-  };
+  // Global Stats
+  const globalTotal = accounts.reduce((sum, acc) => sum + getLatestBalance(acc.balanceHistory), 0);
+  const globalUpi = accounts.filter(a => a.type === 'Upi').reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
+  const globalCash = accounts.filter(a => a.type === 'Cash').reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
 
-  const getTypeIcon = (type) => {
-    switch (type) {
-      case "Upi":
-        return "bi-phone-fill";
-      case "Cash":
-        return "bi-cash-stack";
-      case "Credits":
-        return "bi-credit-card-fill";
-      default:
-        return "bi-wallet2";
-    }
-  };
-
-  const handleMoreClick = (branchId) => {
+  // --- Handlers ---
+  const handleRowClick = (branchId) => {
     navigate(`/branch/${branchId}/accounts`);
   };
 
-  const handleViewHistory = (branchId, type) => {
-    // Find the first account matching branch and type
-    const account = accounts.find(
-      (acc) => acc.branch._id === branchId && acc.type === type
-    );
-    if (account) {
-      setHistoryModalAccount(account);
-    }
-  };
-
   return (
-    <div className="account-container">
-      {/* Header */}
-      <div className="account-header">
-        <div className="header-content">
-          <div className="header-text">
-            <h1 className="header-title">
-              <i className="bi bi-wallet2"></i>
-              Account Management
-            </h1>
-            <p className="header-subtitle">
-              View all branch accounts and balances
-            </p>
+    <div className="account-dashboard">
+
+      {/* 1. Global Status Hero */}
+      <div className="dashboard-hero">
+        <div className="hero-content">
+          <div>
+            <h1 className="hero-title">Financial Overview</h1>
+            <p className="hero-subtitle">Real-time tracking across {branches.length} branches</p>
+          </div>
+          <div className="hero-total-group">
+            <span className="hero-label">Total System Value</span>
+            <div className="value-display">
+              <span className="currency-symbol">₹</span>
+              {new Intl.NumberFormat('en-IN').format(globalTotal)}
+            </div>
+          </div>
+        </div>
+
+        <div className="hero-stats-row">
+          <div className="mini-stat">
+            <span className="label">Total UPI</span>
+            <span className="value text-upi">{formatCurrency(globalUpi)}</span>
+          </div>
+          <div className="vertical-divider"></div>
+          <div className="mini-stat">
+            <span className="label">Total Cash</span>
+            <span className="value text-cash">{formatCurrency(globalCash)}</span>
           </div>
         </div>
       </div>
 
-      {/* Branch-wise Stats */}
-      <div className="branches-container">
-        {branches.map((branch) => {
-          const branchAccounts = accounts.filter(
-            (acc) => acc.branch._id === branch._id
-          );
+      {/* 2. Controls Toolbar */}
+      <div className="dashboard-controls">
+        <div className="search-wrapper">
+          <i className="bi bi-search"></i>
+          <input
+            type="text"
+            placeholder="Search branches..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+          />
+        </div>
 
-          return (
-            <div key={branch._id} className="branch-section">
-              <div className="branch-section-header">
-                <div className="branch-info">
-                  <i className="bi bi-building"></i>
-                  <h2 className="branch-name">
-                    {branch.name}{" "}
-                    <span className="branch-code">({branch.code})</span>
-                  </h2>
-                </div>
-                <button
-                  className="btn btn-outline-primary more-btn"
-                  onClick={() => handleMoreClick(branch._id)}
-                >
-                  More Details
-                  <i className="bi bi-arrow-right"></i>
-                </button>
-              </div>
-
-              <div className="stats-grid">
-                <div
-                  className="stat-card stat-card-clickable"
-                  onClick={() => handleViewHistory(branch._id, "Upi")}
-                  title="Click to view history"
-                >
-                  <div className="stat-icon stat-icon-upi">
-                    <i className="bi bi-phone-fill"></i>
-                  </div>
-                  <div className="stat-info">
-                    <h3 className="stat-title">
-                      UPI ACCOUNTS
-                      <i className="bi bi-clock-history history-indicator"></i>
-                    </h3>
-                    <div className="stat-amount">
-                      {formatCurrency(
-                        calculateTotalByType(branchAccounts, "Upi")
-                      )}
-                    </div>
-                    <div className="stat-meta">
-                      <span className="badge bg-primary">
-                        {branchAccounts.filter((a) => a.type === "Upi").length}{" "}
-                        Accounts
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="stat-card stat-card-clickable"
-                  onClick={() => handleViewHistory(branch._id, "Cash")}
-                  title="Click to view history"
-                >
-                  <div className="stat-icon stat-icon-cash">
-                    <i className="bi bi-cash-stack"></i>
-                  </div>
-                  <div className="stat-info">
-                    <h3 className="stat-title">
-                      CASH ACCOUNTS
-                      <i className="bi bi-clock-history history-indicator"></i>
-                    </h3>
-                    <div className="stat-amount">
-                      {formatCurrency(
-                        calculateTotalByType(branchAccounts, "Cash")
-                      )}
-                    </div>
-                    <div className="stat-meta">
-                      <span className="badge bg-success">
-                        {branchAccounts.filter((a) => a.type === "Cash").length}{" "}
-                        Accounts
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div
-                  className="stat-card stat-card-clickable"
-                  onClick={() => handleViewHistory(branch._id, "Credits")}
-                  title="Click to view history"
-                >
-                  <div className="stat-icon stat-icon-credits">
-                    <i className="bi bi-credit-card-fill"></i>
-                  </div>
-                  <div className="stat-info">
-                    <h3 className="stat-title">
-                      CREDIT ACCOUNTS
-                      <i className="bi bi-clock-history history-indicator"></i>
-                    </h3>
-                    <div className="stat-amount">
-                      {formatCurrency(
-                        calculateTotalByType(branchAccounts, "Credits")
-                      )}
-                    </div>
-                    <div className="stat-meta">
-                      <span className="badge bg-warning">
-                        {
-                          branchAccounts.filter((a) => a.type === "Credits")
-                            .length
-                        }{" "}
-                        Accounts
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="stat-card">
-                  <div className="stat-icon stat-icon-total">
-                    <i className="bi bi-graph-up-arrow"></i>
-                  </div>
-                  <div className="stat-info">
-                    <h3 className="stat-title">TOTAL BALANCE</h3>
-                    <div className="stat-amount">
-                      {formatCurrency(
-                        branchAccounts.reduce(
-                          (sum, acc) =>
-                            sum + getLatestBalance(acc.balanceHistory),
-                          0
-                        )
-                      )}
-                    </div>
-                    <div className="stat-meta">
-                      <span className="badge bg-info">
-                        {branchAccounts.length} Total Accounts
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            </div>
-          );
-        })}
+        <div className="filter-tabs">
+          {["All", "Upi", "Cash"].map(type => (
+            <button
+              key={type}
+              className={`filter-tab ${filterType === type ? 'active' : ''}`}
+              onClick={() => setFilterType(type)}
+            >
+              {type === "All" ? "All Accounts" : type}
+            </button>
+          ))}
+        </div>
       </div>
 
-      {/* History Modal */}
-      {historyModalAccount && (
-        <div
-          className="history-modal-overlay"
-          onClick={() => setHistoryModalAccount(null)}
-        >
-          <div className="history-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="history-modal-header">
-              <h3 className="history-modal-title">
-                <i className="bi bi-clock-history"></i>
-                Balance History
-              </h3>
-              <button
-                className="history-modal-close"
-                onClick={() => setHistoryModalAccount(null)}
-              >
-                <i className="bi bi-x"></i>
-              </button>
-            </div>
-
-            <div className="history-modal-body">
-              <div className="history-account-info">
-                <div className="history-account-type">
-                  <div
-                    className={`history-account-icon account-icon-${historyModalAccount.type.toLowerCase()}`}
-                  >
-                    <i className={getTypeIcon(historyModalAccount.type)}></i>
-                  </div>
-                  <h4 className="history-account-name">
-                    {historyModalAccount.type} Account
-                  </h4>
-                </div>
-                <p className="history-branch-name">
-                  <i className="bi bi-building"></i>
-                  {historyModalAccount.branch.name} (
-                  {historyModalAccount.branch.code})
-                </p>
-              </div>
-
-              <div className="history-list">
-                {historyModalAccount.balanceHistory
-                  .slice()
-                  .reverse()
-                  .map((history, idx) => (
-                    <div key={idx} className="history-item">
-                      <div className="history-date">
-                        <i className="bi bi-calendar-date"></i>
-                        {formatDate(history.date)}
-                      </div>
-                      <div className="history-balances">
-                        <div className="history-balance">
-                          <span className="history-label">Opening:</span>
-                          <span className="history-value">
-                            {formatCurrency(history.openingBalance)}
-                          </span>
-                        </div>
-                        <div className="history-balance">
-                          <span className="history-label">Closing:</span>
-                          <span className="history-value history-value-bold">
-                            {formatCurrency(history.closingBalance)}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-              </div>
-            </div>
-          </div>
+      {/* 3. High-Density List View */}
+      <div className="accounts-list-container">
+        {/* Table Header */}
+        <div className="list-header">
+          <div className="col-branch">Branch</div>
+          <div className="col-stat">UPI</div>
+          <div className="col-stat">Cash</div>
+          <div className="col-stat">Credits</div>
+          <div className="col-total">Total Balance</div>
+          <div className="col-action"></div>
         </div>
-      )}
+
+        <div className="list-body">
+          {filteredBranches.map(branch => {
+            const branchAccounts = accounts.filter(acc => acc.branch._id === branch._id);
+            const upiBal = calculateTotalByType(branchAccounts, 'Upi');
+            const cashBal = calculateTotalByType(branchAccounts, 'Cash');
+            const creditBal = calculateTotalByType(branchAccounts, 'Credits');
+            const totalBal = calculateBranchTotal(branchAccounts);
+
+            // Filter logic
+            if (filterType === "Upi" && upiBal === 0) return null;
+            if (filterType === "Cash" && cashBal === 0) return null;
+
+            return (
+              <div key={branch._id} className="list-row" onClick={() => handleRowClick(branch._id)}>
+                <div className="col-branch">
+                  <div className="branch-avatar">{branch.name.charAt(0)}</div>
+                  <div className="branch-meta">
+                    <span className="name">{branch.name}</span>
+                    <span className="code">{branch.code}</span>
+                  </div>
+                </div>
+
+                <div className="col-stat" data-label="UPI">
+                  <span className={`balance-pill ${upiBal > 0 ? 'pill-upi' : 'pill-empty'}`}>
+                    {formatCurrency(upiBal)}
+                  </span>
+                </div>
+
+                <div className="col-stat" data-label="Cash">
+                  <span className={`balance-pill ${cashBal > 0 ? 'pill-cash' : 'pill-empty'}`}>
+                    {formatCurrency(cashBal)}
+                  </span>
+                </div>
+
+                <div className="col-stat" data-label="Credits">
+                  <span className={`balance-pill ${creditBal > 0 ? 'pill-credit' : 'pill-empty'}`}>
+                    {formatCurrency(creditBal)}
+                  </span>
+                </div>
+
+                <div className="col-total">
+                  <span className="total-text">{formatCurrency(totalBal)}</span>
+                </div>
+
+                <div className="col-action">
+                  <button className="icon-btn">
+                    <i className="bi bi-chevron-right"></i>
+                  </button>
+                </div>
+              </div>
+            );
+          })}
+
+          {filteredBranches.length === 0 && (
+            <div className="empty-state">
+              <i className="bi bi-search"></i>
+              <p>No branches found matching "{searchTerm}"</p>
+            </div>
+          )}
+        </div>
+      </div>
+
     </div>
   );
 };
