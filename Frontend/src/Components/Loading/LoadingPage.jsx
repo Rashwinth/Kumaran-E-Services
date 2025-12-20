@@ -36,11 +36,19 @@ function LoadingPage() {
 
           // Wait for auth context to finish loading
           setTimeout(() => {
-            // Redirect based on authentication status
-            if (isAuthenticated) {
-              navigate("/dashboard");
+            const branchCode = localStorage.getItem("branchCode");
+            const branchToken = localStorage.getItem("branchToken");
+
+            if (!branchCode || !branchToken) {
+              // UNASSIGNED - First time setup
+              navigate("/branch-login");
             } else {
-              navigate("/login");
+              // ASSIGNED - Continue to login flow
+              if (isAuthenticated) {
+                navigate("/dashboard");
+              } else {
+                navigate("/auto-login");
+              }
             }
           }, 1000);
         } else {
@@ -138,7 +146,7 @@ function LoadingPage() {
       </div>
 
       <div className="loading-powered">
-        <Powered theme="light" />
+        <Powered theme="dark" />
       </div>
     </div>
   );

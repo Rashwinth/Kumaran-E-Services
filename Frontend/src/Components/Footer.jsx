@@ -1,4 +1,3 @@
-import React from "react";
 import Powered from "./Loading/Powered";
 import "../Styles/Footer.css";
 
@@ -8,18 +7,17 @@ function Footer() {
   return (
     <footer className="footer-container">
       <div className="footer-content">
-        <p className="footer-copyright">
-          &copy; {currentYear} Kumaran E-Services. All rights reserved.
-        </p>
+        <div className="footer-left">
+          <p className="footer-copyright">
+            &copy; {currentYear} <span>Kumaran E-Services</span>. All rights
+            reserved.
+          </p>
+          <div className="footer-v-divider"></div>
+          <p className="footer-version">v 0.1.0 Billing Terminal</p>
+        </div>
 
-        <div className="footer-links">
-          <a href="#" className="footer-link">
-            Privacy Policy
-          </a>
-          <a href="#" className="footer-link">
-            Terms of Service
-          </a>
-          <div className="footer-powered">
+        <div className="footer-right">
+          <div className="footer-powered-wrapper">
             <Powered theme="light" />
           </div>
         </div>

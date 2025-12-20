@@ -55,7 +55,11 @@ const BranchAccountDetail = () => {
   // Helpers
   const getLatestBalance = (balanceHistory) => {
     if (!balanceHistory || balanceHistory.length === 0) return 0;
-    return balanceHistory[balanceHistory.length - 1].closingBalance;
+    // Sort by date descending and take the first one's closing balance
+    const latest = [...balanceHistory].sort(
+      (a, b) => new Date(b.date) - new Date(a.date)
+    )[0];
+    return latest?.closingBalance || 0;
   };
 
   const calculateTotalByType = (type) => {

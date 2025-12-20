@@ -5,6 +5,7 @@ import { useAuth } from "../Context/AuthContext";
 const Header = () => {
   const navigate = useNavigate();
   const { user, logout } = useAuth();
+  const branchCode=localStorage.getItem("branchCode")
 
   const handleLogout = async () => {
     await logout();
@@ -26,7 +27,7 @@ const Header = () => {
             <path d="M2 12L12 17L22 12" stroke="currentColor" strokeWidth="2" />
           </svg>
         </div>
-        <span>Kumaran E-Services</span>
+        <span>KES - {branchCode} Billing Terminal</span>
       </div>
 
       <div className="nav-user">

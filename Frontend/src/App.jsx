@@ -13,6 +13,8 @@ import "./App.css";
 import Login from "./Pages/User/Login";
 import Register from "./Pages/User/Register";
 import Dashboard from "./Pages/Dashboard";
+import BranchLogin from "./Pages/Branch/BranchLogin";
+import AutoLogin from "./Pages/User/AutoLogin";
 
 // Context
 import { AuthProvider, useAuth } from "./Context/AuthContext";
@@ -38,7 +40,13 @@ const ProtectedRoute = ({ children }) => {
 // Layout wrapper to conditionally show Header
 const Layout = ({ children }) => {
   const location = useLocation();
-  const noHeaderRoutes = ["/", "/login", "/register"];
+  const noHeaderRoutes = [
+    "/",
+    "/login",
+    "/register",
+    "/branch-login",
+    "/auto-login",
+  ];
 
   const hideHeader = noHeaderRoutes.includes(location.pathname);
 
@@ -55,13 +63,19 @@ function AppContent() {
   return (
     <Router>
       <Layout>
-        <ToastContainer position="top-right" autoClose={3000} theme="light" />
+        <ToastContainer
+          position="top-center"
+          autoClose={1000}
+          theme="dark"
+          hideProgressBar
+        />
 
         <Routes>
           {/* Public Routes */}
           <Route path="/" element={<LoadingPage />} />
           <Route path="/login" element={<Login />} />
-          <Route path="/register" element={<Register />} />
+          <Route path="/branch-login" element={<BranchLogin />} />
+          <Route path="/auto-login" element={<AutoLogin />} />
 
           {/* Protected Route */}
           <Route

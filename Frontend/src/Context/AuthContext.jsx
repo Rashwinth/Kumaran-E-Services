@@ -8,6 +8,8 @@ import {
 import axios from "axios";
 import { toast } from "react-toastify";
 
+import { API_BASE, API_ENDPOINTS } from "../config/api.jsx";
+
 const AuthContext = createContext();
 
 export const useAuth = () => {
@@ -24,43 +26,26 @@ export const AuthProvider = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
 
-  const API_URL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api`;
-
-  // Get refresh token from localStorage
-  const getRefreshToken = () => {
-    return localStorage.getItem("refreshToken");
-  };
-
-  // Save refresh token to localStorage
-  const saveRefreshToken = (token) => {
-    localStorage.setItem("refreshToken", token);
-  };
-
-  // Remove refresh token from localStorage
-  const removeRefreshToken = () => {
-    localStorage.removeItem("refreshToken");
-  };
+  // Configure axios to send cookies with requests
+  axios.defaults.withCredentials = true;
 
   // Clear auth state
   const clearAuthState = useCallback(() => {
     setAccessToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    removeRefreshToken();
   }, []);
 
-  // Refresh access token using refresh token
+  // Refresh access token using HTTP-only cookie
   const refreshAccessToken = useCallback(async () => {
     try {
-      const refreshToken = getRefreshToken();
-
-      if (!refreshToken) {
-        throw new Error("No refresh token available");
-      }
-
-      const response = await axios.post(`${API_URL}/auth/refresh`, {
-        refreshToken,
-      });
+      const response = await axios.post(
+        API_ENDPOINTS.AUTH.REFRESH,
+        {},
+        {
+          skipAuthRefresh: true, // Custom flag to skip interceptor
+        }
+      );
 
       if (response.data.success) {
         setAccessToken(response.data.accessToken);
@@ -71,42 +56,33 @@ export const AuthProvider = ({ children }) => {
         throw new Error("Token refresh failed");
       }
     } catch (error) {
-      console.error("Token refresh failed:", error);
+      console.log("ℹ️ Auto-login logic: No active cookie/session found");
       clearAuthState();
       throw error;
     }
-  }, [API_URL, clearAuthState]);
+  }, [clearAuthState]);
 
   // Initialize auth on mount
   useEffect(() => {
     const initAuth = async () => {
-      const refreshToken = getRefreshToken();
-
-      if (refreshToken) {
-        try {
-          console.log("🔄 Attempting to restore session...");
-          await refreshAccessToken();
-          console.log("✅ Session restored successfully");
-          setLoading(false); // Set loading false AFTER successful restoration
-        } catch (error) {
-          console.error("❌ Auto-login failed:", error);
-          clearAuthState();
-          setLoading(false); // Set loading false AFTER clearing state
-        }
-      } else {
-        console.log("ℹ️ No refresh token found");
-        setLoading(false); // Set loading false when no token exists
+      try {
+        await refreshAccessToken();
+      } catch (error) {
+        // Error handled in refreshAccessToken
+      } finally {
+        setLoading(false);
       }
     };
 
     initAuth();
-  }, [refreshAccessToken, clearAuthState]);
+  }, [refreshAccessToken]);
 
   // Axios interceptor to add token to requests
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use(
       (config) => {
-        if (accessToken && config.url?.startsWith(API_URL)) {
+        // Only attach token if it's our API and it's not a refresh/verify call that might have separate requirements
+        if (accessToken && config.url?.startsWith(API_BASE)) {
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
         return config;
@@ -118,6 +94,10 @@ export const AuthProvider = ({ children }) => {
       (response) => response,
       async (error) => {
         const originalRequest = error.config;
+
+        if (originalRequest.skipAuthRefresh) {
+          return Promise.reject(error);
+        }
 
         // If 401 and not already retried, try to refresh token
         if (error.response?.status === 401 && !originalRequest._retry) {
@@ -140,23 +120,25 @@ export const AuthProvider = ({ children }) => {
       axios.interceptors.request.eject(requestInterceptor);
       axios.interceptors.response.eject(responseInterceptor);
     };
-  }, [accessToken, API_URL, refreshAccessToken]);
+  }, [accessToken, refreshAccessToken]);
 
   // Login function
   const login = async (identifier, password) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/login`, {
-        identifier,
-        password,
-        portal: "frontend", // Specify this is the frontend portal
-      });
+      const response = await axios.post(
+        API_ENDPOINTS.AUTH.LOGIN,
+        {
+          identifier,
+          password,
+          portal: "frontend",
+        },
+        { skipAuthRefresh: true }
+      );
 
       if (response.data.success) {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
-        saveRefreshToken(response.data.refreshToken);
-
         return { success: true };
       } else {
         return {
@@ -176,14 +158,14 @@ export const AuthProvider = ({ children }) => {
   // Register function
   const register = async (userData) => {
     try {
-      const response = await axios.post(`${API_URL}/auth/register`, userData);
+      const response = await axios.post(API_ENDPOINTS.AUTH.REGISTER, userData, {
+        skipAuthRefresh: true,
+      });
 
       if (response.data.success) {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
-        saveRefreshToken(response.data.refreshToken);
-
         return { success: true };
       } else {
         return {
@@ -205,10 +187,11 @@ export const AuthProvider = ({ children }) => {
     try {
       if (accessToken) {
         await axios.post(
-          `${API_URL}/auth/logout`,
+          API_ENDPOINTS.AUTH.LOGOUT,
           {},
           {
             headers: { Authorization: `Bearer ${accessToken}` },
+            skipAuthRefresh: true,
           }
         );
       }
@@ -216,30 +199,6 @@ export const AuthProvider = ({ children }) => {
       console.error("Logout error:", error);
     } finally {
       clearAuthState();
-    }
-  };
-
-  // Update password function
-  const updatePassword = async (currentPassword, newPassword) => {
-    try {
-      const response = await axios.put(
-        `${API_URL}/auth/updatepassword`,
-        { currentPassword, newPassword },
-        { headers: { Authorization: `Bearer ${accessToken}` } }
-      );
-
-      if (response.data.success) {
-        setAccessToken(response.data.accessToken);
-        saveRefreshToken(response.data.refreshToken);
-
-        return { success: true, message: "Password updated successfully" };
-      }
-    } catch (error) {
-      console.error("Update password error:", error);
-      return {
-        success: false,
-        message: error.response?.data?.message || "Failed to update password",
-      };
     }
   };
 
@@ -251,7 +210,6 @@ export const AuthProvider = ({ children }) => {
     login,
     register,
     logout,
-    updatePassword,
     refreshAccessToken,
   };
 

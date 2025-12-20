@@ -7,6 +7,7 @@ const {
   getMe,
   updatePassword,
 } = require("../controller/authController");
+const { verifyBranch } = require("../controller/PublicBranchController");
 const { protect } = require("../middleware/auth");
 
 // Public routes
@@ -16,6 +17,7 @@ router.get("/", (req, res) => {
 
 router.post("/login", login);
 router.post("/refresh", refreshToken);
+router.post("/branches/verify", verifyBranch);
 
 // Protected routes
 router.post("/logout", protect, logout);
