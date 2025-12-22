@@ -40,7 +40,7 @@ const Login = () => {
       if (result.success) {
         toast.success("Login successful!");
         setTimeout(() => {
-          navigate("/dashboard");
+          navigate("/billing");
         }, 1000);
       } else {
         toast.error(result.message || "Login failed. Check credentials");

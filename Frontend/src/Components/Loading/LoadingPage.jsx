@@ -45,7 +45,7 @@ function LoadingPage() {
             } else {
               // ASSIGNED - Continue to login flow
               if (isAuthenticated) {
-                navigate("/dashboard");
+                navigate("/billing");
               } else {
                 navigate("/auto-login");
               }
