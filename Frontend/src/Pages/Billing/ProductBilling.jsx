@@ -26,10 +26,8 @@ const ProductBilling = () => {
   // Customer State
   const [showCustomerModal, setShowCustomerModal] = useState(false);
   const [selectedCustomerId, setSelectedCustomerId] = useState(null);
-  const [selectedCustomerName, setSelectedCustomerName] =
-    useState("Walk-in Customer");
-  const [selectedCustomerPhone, setSelectedCustomerPhone] =
-    useState("0000000000");
+  const [selectedCustomerName, setSelectedCustomerName] = useState("");
+  const [selectedCustomerPhone, setSelectedCustomerPhone] = useState("");
 
   // Payment State
   const [accounts, setAccounts] = useState([]);
@@ -41,10 +39,11 @@ const ProductBilling = () => {
 
   // Calculations
   const cartWithTotals = cart.map((item) => {
-    const effectivePrice = Math.max(0, item.price - item.discount);
+    const discountAmount = (item.price * item.discount) / 100;
+    const effectivePrice = Math.max(0, item.price - discountAmount);
     const lineTotal = effectivePrice * item.qty;
     const taxAmount = (lineTotal * item.gst) / 100;
-    return { ...item, effectivePrice, lineTotal, taxAmount };
+    return { ...item, effectivePrice, lineTotal, taxAmount, discountAmount };
   });
 
   const subtotal = cartWithTotals.reduce(
@@ -57,6 +56,11 @@ const ProductBilling = () => {
   );
   const grandTotal = subtotal + totalTax;
   const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
+
+  const totalDiscount = cartWithTotals.reduce(
+    (acc, item) => acc + item.discountAmount * item.qty,
+    0
+  );
 
   // Cart Functions
   const addToCart = (product) => {
@@ -71,16 +75,15 @@ const ProductBilling = () => {
     });
   };
 
-  const updateQty = (id, delta) => {
+  const setQty = (id, val) => {
+    const qty = Math.max(1, parseInt(val) || 0);
     setCart((prev) =>
-      prev.map((item) =>
-        item._id === id ? { ...item, qty: Math.max(1, item.qty + delta) } : item
-      )
+      prev.map((item) => (item._id === id ? { ...item, qty } : item))
     );
   };
 
   const updateDiscount = (id, val) => {
-    const discount = Math.max(0, parseFloat(val) || 0);
+    const discount = Math.min(100, Math.max(0, parseFloat(val) || 0));
     setCart((prev) =>
       prev.map((item) => (item._id === id ? { ...item, discount } : item))
     );
@@ -130,8 +133,11 @@ const ProductBilling = () => {
   }, [accessToken]);
 
   // Payment Handler
-  const handlePayment = async () => {
+  const handlePayment = async (shouldPrint = false) => {
     if (cart.length === 0) return toast.warning("Cart is empty!");
+    if (!selectedCustomerId) {
+      return toast.warning("Please select or register a customer!");
+    }
     if (!selectedAccountId)
       return toast.warning("Please select a payment account!");
 
@@ -142,26 +148,27 @@ const ProductBilling = () => {
       );
     }
 
-    setIsProcessing(true);
+    setIsProcessing(shouldPrint ? "printing" : "saving");
     try {
       const saleData = {
         customer: selectedCustomerId,
         items: cart.map((item) => {
-          const effectivePrice = Math.max(0, item.price - item.discount);
+          const discountAmount = (item.price * item.discount) / 100;
+          const effectivePrice = Math.max(0, item.price - discountAmount);
           const lineTotal = effectivePrice * item.qty;
           const taxAmount = (lineTotal * item.gst) / 100;
 
           return {
             product: item._id,
-            qty: item.qty, // Changed from 'quantity' to 'qty'
+            qty: item.qty,
             price: item.price,
-            discount: item.discount,
-            taxAmount: taxAmount, // Changed from 'gst' to 'taxAmount'
-            lineTotal: lineTotal, // Added lineTotal
+            discount: discountAmount,
+            taxAmount: taxAmount,
+            lineTotal: lineTotal,
           };
         }),
-        subtotal: subtotal, // Changed from 'totalAmount'
-        totalTax: totalTax, // Changed from 'taxAmount'
+        subtotal: subtotal,
+        totalTax: totalTax,
         grandTotal: grandTotal,
         paymentMethod: selectedAccountId,
       };
@@ -171,7 +178,16 @@ const ProductBilling = () => {
       });
 
       if (res.data.success) {
-        toast.success("Payment successful!");
+        toast.success(
+          shouldPrint ? "Sale saved & printing..." : "Sale saved successfully!"
+        );
+
+        if (shouldPrint) {
+          // Placeholder for actual print logic
+          // window.print() or redirect to a print view
+          console.log("Printing invoice...");
+        }
+
         clearTransaction();
       }
     } catch (error) {
@@ -185,8 +201,8 @@ const ProductBilling = () => {
   const clearTransaction = () => {
     setCart([]);
     setSelectedCustomerId(null);
-    setSelectedCustomerName("Walk-in Customer");
-    setSelectedCustomerPhone("0000000000");
+    setSelectedCustomerName("");
+    setSelectedCustomerPhone("");
     searchInputRef.current?.focus();
   };
 
@@ -211,9 +227,13 @@ const ProductBilling = () => {
         e.preventDefault();
         clearTransaction();
       }
+      if (e.key === "F9") {
+        e.preventDefault();
+        handlePayment(false);
+      }
       if (e.key === "F10") {
         e.preventDefault();
-        handlePayment();
+        handlePayment(true);
       }
     };
 
@@ -226,7 +246,7 @@ const ProductBilling = () => {
   }
 
   return (
-    <div className="d-flex flex-column vh-100 bg-light">
+    <div className="d-flex flex-column vh-100 bg-light overflow-hidden">
       {/* Customer Modal */}
       <CustomerModal
         isOpen={showCustomerModal}
@@ -236,256 +256,435 @@ const ProductBilling = () => {
       />
 
       {/* Top Navigation */}
-      <div className="bg-white border-bottom px-4 py-3 d-flex justify-content-between align-items-center">
-        <div className="d-flex align-items-center gap-3">
-          <div
-            className="bg-primary text-white rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: "40px", height: "40px" }}
-          >
-            <i className="bi bi-shop fs-5"></i>
+      <div
+        className="bg-white border-bottom px-4 py-2 d-flex justify-content-between align-items-center"
+        style={{ minHeight: "65px" }}
+      >
+        <div className="d-flex align-items-center gap-4">
+          {/* Branch Info */}
+          <div className="d-flex align-items-center gap-2">
+            <div
+              className="bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center"
+              style={{ width: "32px", height: "32px" }}
+            >
+              <i className="bi bi-shop fs-6"></i>
+            </div>
+            <div>
+              <h6
+                className="mb-0 fw-bold"
+                style={{ fontSize: "0.7rem", color: "#6c757d" }}
+              >
+                BRANCH
+              </h6>
+              <div className="fw-bold text-dark small">{user?.branchCode}</div>
+            </div>
           </div>
-          <div>
-            <h6 className="mb-0 fw-bold">BRANCH</h6>
-            <small className="text-muted">{user?.branchName || "SMALAI"}</small>
+
+          <div className="vr opacity-10" style={{ height: "30px" }}></div>
+
+          {/* Staff Info */}
+          <div className="d-flex align-items-center gap-2">
+            <div
+              className="bg-success bg-opacity-10 text-success rounded d-flex align-items-center justify-content-center"
+              style={{ width: "32px", height: "32px" }}
+            >
+              <i className="bi bi-person fs-6"></i>
+            </div>
+            <div>
+              <h6
+                className="mb-0 fw-bold"
+                style={{ fontSize: "0.7rem", color: "#6c757d" }}
+              >
+                STAFF
+              </h6>
+              <div className="fw-bold text-dark small">
+                {user?.name?.toUpperCase()}
+              </div>
+            </div>
           </div>
         </div>
-        <div className="d-flex align-items-center gap-3">
-          <div
-            className="bg-light text-primary rounded-circle d-flex align-items-center justify-content-center"
-            style={{ width: "40px", height: "40px" }}
-          >
-            <i className="bi bi-person fs-5"></i>
+
+        {/* Status Group: Shortcuts & Time */}
+        <div className="d-flex align-items-center gap-4">
+          {/* Shortcuts Section */}
+          <div className="d-flex align-items-center gap-3">
+            <span
+              className="text-uppercase fw-bold text-muted"
+              style={{ fontSize: "0.6rem", letterSpacing: "0.05em" }}
+            >
+              Shortcuts:
+            </span>
+            <div className="d-flex gap-3">
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd
+                  className="bg-secondary text-white fw-normal me-1"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  F1
+                </kbd>
+               New Customer
+              </small>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd
+                  className="bg-secondary text-white fw-normal me-1"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  F2
+                </kbd>
+                Search
+              </small>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd
+                  className="bg-secondary text-white fw-normal me-1"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  F4
+                </kbd>
+                Clear
+              </small>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd
+                  className="bg-secondary text-white fw-normal me-1"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  F9
+                </kbd>
+                Save
+              </small>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd
+                  className="bg-secondary text-white fw-normal me-1"
+                  style={{ fontSize: "0.7rem" }}
+                >
+                  F10
+                </kbd>
+                Print
+              </small>
+            </div>
           </div>
-          <div>
-            <h6 className="mb-0 fw-bold">STAFF</h6>
-            <small className="text-muted">{user?.name || "THARUN"}</small>
+
+          <div className="vr opacity-10" style={{ height: "30px" }}></div>
+
+          {/* Time and Date */}
+          <div className="text-end">
+            <div className="d-flex align-items-center gap-2 justify-content-end">
+              <i className="bi bi-clock text-primary small"></i>
+              <h6 className="mb-0 fw-bold text-primary small">
+                {dateTime.toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                  second: "2-digit",
+                })}
+              </h6>
+            </div>
+            <small
+              className="text-muted d-block mt-1"
+              style={{ fontSize: "0.75rem" }}
+            >
+              {dateTime.toLocaleDateString(undefined, {
+                weekday: "short",
+                day: "numeric",
+                month: "short",
+              })}
+            </small>
           </div>
-        </div>
-        <div className="text-end">
-          <h5 className="mb-0 fw-bold text-primary">
-            {dateTime.toLocaleTimeString()}
-          </h5>
-          <small className="text-muted">{dateTime.toLocaleDateString()}</small>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="flex-grow-1 overflow-hidden">
-        <div className="container-fluid h-100 p-4">
-          <div className="row g-3 h-100">
-            {/* Left Column - Cart */}
-            <div className="col-8 d-flex flex-column">
-              <div className="card shadow-sm h-100 d-flex flex-column">
-                <div className="card-body p-0 d-flex flex-column">
-                  {/* Search Bar */}
-                  <div className="p-3 border-bottom">
-                    <ProductSearch
-                      products={allProducts}
-                      onAddToCart={addToCart}
-                      searchInputRef={searchInputRef}
-                    />
+      {/* Main Content Area */}
+      <div className="flex-grow-1 p-3 overflow-hidden d-flex flex-column">
+        {/* Customer Section - Horizontal at Top */}
+        <div className="card shadow-sm mb-3">
+          <div className="card-body p-2">
+            <div className="row g-2 align-items-center">
+              <div className="col-md-5">
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <i className="bi bi-person-badge text-primary"></i>
+                  <h6 className="fw-bold mb-0 small">CUSTOMER SEARCH</h6>
+                </div>
+                <CustomerSearch
+                  customers={allCustomers}
+                  onSelectCustomer={handleSelectCustomer}
+                  onAddNewCustomer={() => setShowCustomerModal(true)}
+                />
+              </div>
+              <div className="col-md-7">
+                <div className="d-flex align-items-center gap-2 mb-1">
+                  <i className="bi bi-check-circle text-primary"></i>
+                  <h6 className="fw-bold mb-0 small">SELECTED CUSTOMER</h6>
+                </div>
+                {selectedCustomerId ? (
+                  <div className="card bg-light border-0">
+                    <div className="card-body p-2">
+                      <div className="d-flex flex-row justify-content-between align-items-center">
+                        <div className="d-flex gap-4 align-items-center">
+                          <div className="fw-bold text-dark">
+                            <i className="bi bi-person me-2"></i>
+                            {selectedCustomerName.toUpperCase()}
+                          </div>
+                          <div className="text-muted small">
+                            <i className="bi bi-telephone-outbound me-2"></i>
+                            {selectedCustomerPhone}
+                          </div>
+                        </div>
+                        <button
+                          className="btn btn-sm btn-link text-danger p-0"
+                          onClick={() => {
+                            setSelectedCustomerId(null);
+                            setSelectedCustomerName("");
+                            setSelectedCustomerPhone("");
+                          }}
+                          title="Clear Customer"
+                        >
+                          <i className="bi bi-x-circle-fill fs-5"></i>
+                        </button>
+                      </div>
+                    </div>
                   </div>
+                ) : (
+                  <div className="card bg-warning bg-opacity-10 border-warning">
+                    <div className="card-body p-2">
+                      <div className="d-flex align-items-center gap-2">
+                        <i className="bi bi-exclamation-triangle text-warning"></i>
+                        <div>
+                          <small className="fw-bold text-warning d-block">
+                            No Customer Selected
+                          </small>
+                          <small
+                            className="text-muted"
+                            style={{ fontSize: "0.7rem" }}
+                          >
+                            Please select or add a customer to continue
+                          </small>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          </div>
+        </div>
 
-                  {/* Cart Table */}
-                  <div className="flex-grow-1 overflow-auto">
-                    <table className="table table-hover mb-0">
-                      <thead className="table-light sticky-top">
+        {/* Lower Section - Row with 2 columns */}
+        <div className="row g-3 flex-grow-1 overflow-hidden">
+          {/* Left Column - Cart */}
+          <div className="col-8 h-100 d-flex flex-column">
+            <div className="card shadow-sm flex-grow-1 overflow-hidden d-flex flex-column">
+              <div className="card-body p-0 d-flex flex-column h-100">
+                {/* Search Bar */}
+                <div className="p-3 border-bottom bg-white">
+                  <ProductSearch
+                    products={allProducts}
+                    onAddToCart={addToCart}
+                    searchInputRef={searchInputRef}
+                  />
+                </div>
+
+                {/* Cart Table Container */}
+                <div className="flex-grow-1 overflow-auto">
+                  <table className="table table-hover mb-0">
+                    <thead
+                      className="table-light sticky-top"
+                      style={{ zIndex: 10 }}
+                    >
+                      <tr className="small text-uppercase">
+                        <th
+                          style={{ width: "5%" }}
+                          className="ps-3 text-center"
+                        >
+                          #
+                        </th>
+                        <th style={{ width: "30%" }}>Description</th>
+                        <th style={{ width: "8%" }} className="text-center">
+                          GST%
+                        </th>
+                        <th style={{ width: "10%" }} className="text-end">
+                          Price
+                        </th>
+                        <th style={{ width: "12%" }} className="text-center">
+                          Qty
+                        </th>
+                        <th style={{ width: "15%" }} className="text-end">
+                          Discount %
+                        </th>
+                        <th style={{ width: "15%" }} className="text-end">
+                          Total
+                        </th>
+                        <th
+                          style={{ width: "5%" }}
+                          className="text-center"
+                        ></th>
+                      </tr>
+                    </thead>
+                    <tbody className="border-top-0">
+                      {cart.length === 0 ? (
                         <tr>
-                          <th style={{ width: "5%" }}>#</th>
-                          <th style={{ width: "30%" }}>Item Description</th>
-                          <th style={{ width: "10%" }} className="text-center">
-                            GST%
-                          </th>
-                          <th style={{ width: "10%" }} className="text-end">
-                            MRP
-                          </th>
-                          <th style={{ width: "10%" }} className="text-end">
-                            Price
-                          </th>
-                          <th style={{ width: "10%" }} className="text-center">
-                            Qty
-                          </th>
-                          <th style={{ width: "10%" }} className="text-end">
-                            Discount
-                          </th>
-                          <th style={{ width: "10%" }} className="text-end">
-                            Total
-                          </th>
-                          <th style={{ width: "5%" }}></th>
+                          <td
+                            colSpan="8"
+                            className="text-center text-muted py-5"
+                          >
+                            <div className="py-4">
+                              <i className="bi bi-cart-x fs-1 d-block mb-3 opacity-25"></i>
+                              <h6 className="fw-light">Cart is empty</h6>
+                              <p className="small mb-0 text-secondary">
+                                Start scanning or searching products to add them
+                                here
+                              </p>
+                            </div>
+                          </td>
                         </tr>
-                      </thead>
-                      <tbody>
-                        {cart.length === 0 ? (
-                          <tr>
-                            <td
-                              colSpan="9"
-                              className="text-center text-muted py-5"
-                            >
-                              <i className="bi bi-cart-x fs-1 d-block mb-2"></i>
-                              Cart is empty. Start scanning or searching
-                              products.
+                      ) : (
+                        cartWithTotals.map((item, idx) => (
+                          <tr
+                            key={item._id}
+                            className="align-middle border-bottom"
+                          >
+                            <td className="text-center small ps-3 text-muted">
+                              {idx + 1}
                             </td>
-                          </tr>
-                        ) : (
-                          cartWithTotals.map((item, idx) => (
-                            <tr key={item._id}>
-                              <td className="align-middle">{idx + 1}</td>
-                              <td className="align-middle">
-                                <div className="fw-bold">{item.name}</div>
-                                <small className="text-secondary">
-                                  #{item.sku}
-                                </small>
-                              </td>
-                              <td className="align-middle text-center">
-                                <span className="badge bg-info">
-                                  {item.gst}%
-                                </span>
-                              </td>
-                              <td className="align-middle text-end">
-                                ₹{item.mrp}
-                              </td>
-                              <td className="align-middle text-end">
-                                ₹{item.price}
-                              </td>
-                              <td className="align-middle">
-                                <div className="d-flex align-items-center justify-content-center gap-1">
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary"
-                                    onClick={() => updateQty(item._id, -1)}
-                                    disabled={item.qty <= 1}
-                                  >
-                                    <i className="bi bi-dash"></i>
-                                  </button>
-                                  <span className="fw-bold px-2">
-                                    {item.qty}
-                                  </span>
-                                  <button
-                                    className="btn btn-sm btn-outline-secondary"
-                                    onClick={() => updateQty(item._id, 1)}
-                                  >
-                                    <i className="bi bi-plus"></i>
-                                  </button>
-                                </div>
-                              </td>
-                              <td className="align-middle">
+                            <td>
+                              <div className="fw-bold small text-dark">
+                                {item.name}
+                              </div>
+                              <div
+                                className="text-muted"
+                                style={{ fontSize: "0.7rem" }}
+                              >
+                                #{item.sku}
+                              </div>
+                            </td>
+                            <td className="text-center">
+                              <span className="badge bg-light text-dark border small fw-normal">
+                                {item.gst}%
+                              </span>
+                            </td>
+                            <td className="text-end small">₹{item.price}</td>
+                            <td>
+                              <input
+                                type="number"
+                                className="form-control form-control-sm text-center small border-0 bg-light mx-auto"
+                                value={item.qty}
+                                onChange={(e) =>
+                                  setQty(item._id, e.target.value)
+                                }
+                                min="1"
+                                style={{ width: "60px", fontSize: "0.8rem" }}
+                              />
+                            </td>
+                            <td>
+                              <div
+                                className="input-group input-group-sm mx-auto"
+                                style={{ width: "70px" }}
+                              >
                                 <input
                                   type="number"
-                                  className="form-control form-control-sm text-end"
+                                  className="form-control text-end small border-0 bg-light pe-1"
                                   value={item.discount}
                                   onChange={(e) =>
                                     updateDiscount(item._id, e.target.value)
                                   }
                                   min="0"
-                                  max={item.price}
-                                  style={{ width: "80px" }}
+                                  max="100"
+                                  style={{ fontSize: "0.8rem" }}
                                 />
-                              </td>
-                              <td className="align-middle text-end fw-bold">
-                                ₹{item.lineTotal.toFixed(2)}
-                              </td>
-                              <td className="align-middle">
-                                <button
-                                  className="btn btn-sm btn-outline-danger"
-                                  onClick={() => removeItem(item._id)}
+                                <span
+                                  className="input-group-text bg-light border-0 ps-0 pe-2 small text-muted"
+                                  style={{ fontSize: "0.7rem" }}
                                 >
-                                  <i className="bi bi-trash"></i>
-                                </button>
-                              </td>
-                            </tr>
-                          ))
-                        )}
-                      </tbody>
-                    </table>
-                  </div>
+                                  %
+                                </span>
+                              </div>
+                            </td>
+                            <td className="text-end fw-bold small">
+                              ₹{item.lineTotal.toFixed(2)}
+                            </td>
+                            <td className="text-center">
+                              <button
+                                className="btn btn-link text-danger p-0"
+                                onClick={() => removeItem(item._id)}
+                              >
+                                <i className="bi bi-trash fs-6"></i>
+                              </button>
+                            </td>
+                          </tr>
+                        ))
+                      )}
+                    </tbody>
+                  </table>
                 </div>
               </div>
             </div>
+          </div>
 
-            {/* Right Column - Customer & Payment */}
-            <div
-              className="col-4 d-flex flex-column"
-              style={{ maxHeight: "calc(100vh - 180px)", overflowY: "auto" }}
-            >
-              <div className="card shadow-sm mb-3">
-                <div className="card-body">
-                  <h6 className="fw-bold mb-3">CUSTOMER</h6>
-                  <CustomerSearch
-                    customers={allCustomers}
-                    onSelectCustomer={handleSelectCustomer}
-                    onAddNewCustomer={() => setShowCustomerModal(true)}
-                  />
-
-                  {/* Selected Customer Card */}
-                  <div className="card bg-light border-0">
-                    <div className="card-body p-3">
-                      <div className="d-flex justify-content-between align-items-start">
-                        <div className="flex-grow-1">
-                          <div className="fw-bold text-primary mb-1">
-                            {selectedCustomerId ? "Registered" : "Walk-in"}
-                          </div>
-                          <div className="fw-bold">{selectedCustomerName}</div>
-                          <small className="text-muted">
-                            {selectedCustomerPhone === "0000000000"
-                              ? "No Phone Number"
-                              : selectedCustomerPhone}
-                          </small>
-                        </div>
-                        {selectedCustomerId && (
-                          <button
-                            className="btn btn-sm btn-outline-danger"
-                            onClick={() => {
-                              setSelectedCustomerId(null);
-                              setSelectedCustomerName("Walk-in Customer");
-                              setSelectedCustomerPhone("0000000000");
-                            }}
-                          >
-                            <i className="bi bi-x"></i>
-                          </button>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+          {/* Right Column - Payment Summary */}
+          <div className="col-4 h-100 d-flex flex-column">
+            <div className="card shadow-sm h-100 overflow-hidden d-flex flex-column">
+              <div className="card-body p-3 d-flex flex-column overflow-auto">
+                <div className="d-flex align-items-center gap-2 mb-2">
+                  <i className="bi bi-wallet2 text-primary"></i>
+                  <h6 className="fw-bold mb-0">BILLING SUMMARY</h6>
                 </div>
-              </div>
 
-              {/* Payment Summary */}
-              <div className="card shadow-sm">
-                <div className="card-body">
-                  <h6 className="fw-bold mb-3">Payment Summary</h6>
-
-                  <div className="mb-3">
-                    <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">Subtotal</span>
-                      <span className="fw-bold">₹{subtotal.toFixed(2)}</span>
-                    </div>
-                    <div className="d-flex justify-content-between mb-2">
-                      <span className="text-muted">Tax (GST)</span>
-                      <span className="fw-bold">₹{totalTax.toFixed(2)}</span>
-                    </div>
-                    <hr />
-                    <div className="d-flex justify-content-between">
-                      <span className="fs-5 fw-bold">Grand Total</span>
-                      <span className="fs-4 fw-bold text-primary">
+                <div className="bg-light p-3 rounded-3 mb-4 flex-shrink-0">
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted small">Subtotal</span>
+                    <span className="fw-bold small">
+                      ₹{subtotal.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted small">Tax (GST)</span>
+                    <span className="fw-bold small">
+                      ₹{totalTax.toFixed(2)}
+                    </span>
+                  </div>
+                  <div className="d-flex justify-content-between mb-2">
+                    <span className="text-muted small">Total Discount</span>
+                    <span className="fw-bold small text-danger">
+                      - ₹{totalDiscount.toFixed(2)}
+                    </span>
+                  </div>
+                  <hr className="my-2 opacity-10" />
+                  <div className="d-flex justify-content-between align-items-end">
+                    <div>
+                      <span
+                        className="text-muted d-block"
+                        style={{ fontSize: "0.7rem" }}
+                      >
+                        TOTAL PAYABLE
+                      </span>
+                      <span className="fs-3 fw-bold text-primary">
                         ₹{grandTotal.toFixed(2)}
                       </span>
                     </div>
-                    <div className="text-end">
-                      <small className="text-muted">{totalItems} items</small>
+                    <div className="text-end pb-1">
+                      <span className="badge bg-primary bg-opacity-10 text-primary fw-normal">
+                        {totalItems} items
+                      </span>
                     </div>
                   </div>
+                </div>
 
-                  <h6 className="fw-bold mb-3">CHOOSE ACCOUNT</h6>
-                  <div className="d-flex gap-2 mb-3">
+                <div className="mb-4 flex-shrink-0">
+                  <label
+                    className="fw-bold small mb-2 text-uppercase text-muted"
+                    style={{ fontSize: "0.65rem", letterSpacing: "0.05em" }}
+                  >
+                    Payment Account
+                  </label>
+                  <div className="d-flex flex-wrap gap-2">
                     {accounts.map((acc) => (
                       <button
                         key={acc._id}
-                        className={`btn flex-fill ${
+                        className={`btn btn-sm flex-fill d-flex align-items-center justify-content-center gap-2 py-2 px-3 transition-all ${
                           selectedAccountId === acc._id
-                            ? "btn-primary"
+                            ? "btn-primary shadow-sm"
                             : "btn-outline-primary"
                         }`}
                         onClick={() => setSelectedAccountId(acc._id)}
                         disabled={isProcessing}
+                        style={{ minWidth: "100px", borderRadius: "8px" }}
                       >
                         <i
                           className={`bi ${
@@ -494,92 +693,94 @@ const ProductBilling = () => {
                               : acc.type === "Upi"
                               ? "bi-phone"
                               : "bi-credit-card"
-                          } me-2`}
+                          }`}
                         ></i>
-                        {acc.type === "Upi" ? acc.upiAccountName : acc.type}
+                        <span className="small fw-500">
+                          {acc.type === "Upi" ? acc.upiAccountName : acc.type}
+                        </span>
                       </button>
                     ))}
                   </div>
+                </div>
 
-                  {selectedAccountId && (
-                    <div className="alert alert-info py-2 mb-3">
-                      <small>
-                        <strong>Trial Balance: ₹</strong>
+                {selectedAccountId && (
+                  <div className="alert alert-secondary border-0 bg-light p-2 mb-2 rounded-3 flex-shrink-0">
+                    <div className="d-flex justify-content-between mb-1">
+                      <small className="text-muted">Account Balance:</small>
+                      <small className="fw-bold">
+                        ₹
                         {accounts
                           .find((a) => a._id === selectedAccountId)
                           ?.currentBalance?.toFixed(2) || "0.00"}
                       </small>
-                      <br />
-                      <small>
-                        <strong>Bal After: ₹</strong>
+                    </div>
+                    {/* <div className="d-flex justify-content-between">
+                      <small className="text-muted">Post-Transaction:</small>
+                      <small className="fw-bold text-success">
+                        ₹
                         {(
                           (accounts.find((a) => a._id === selectedAccountId)
                             ?.currentBalance || 0) + grandTotal
                         ).toFixed(2)}
                       </small>
-                    </div>
-                  )}
+                    </div> */}
+                  </div>
+                )}
 
-                  <div className="d-flex gap-2 mb-3">
+                <div className="mt-auto flex-shrink-0 pt-3 border-top">
+                  <div className="d-flex flex-column gap-2">
+                    <div className="d-flex gap-2">
+                      <button
+                        className="btn btn-primary flex-fill py-2"
+                        onClick={() => handlePayment(false)}
+                        disabled={
+                          isProcessing ||
+                          cart.length === 0 ||
+                          !selectedAccountId ||
+                          !selectedCustomerId
+                        }
+                      >
+                        {isProcessing === "saving" ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Saving...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-cloud-arrow-up me-2"></i>Save
+                            Bill
+                          </>
+                        )}
+                      </button>
+                      <button
+                        className="btn btn-success flex-fill py-2"
+                        onClick={() => handlePayment(true)}
+                        disabled={
+                          isProcessing ||
+                          cart.length === 0 ||
+                          !selectedAccountId ||
+                          !selectedCustomerId
+                        }
+                      >
+                        {isProcessing === "printing" ? (
+                          <>
+                            <span className="spinner-border spinner-border-sm me-2"></span>
+                            Printing...
+                          </>
+                        ) : (
+                          <>
+                            <i className="bi bi-printer me-2"></i>Save & Print
+                          </>
+                        )}
+                      </button>
+                    </div>
                     <button
-                      className="btn btn-outline-secondary flex-fill"
+                      className="btn btn-outline-danger w-100 py-2 border-0 bg-light bg-opacity-50 text-danger hover-bg-danger hover-text-white transition-all"
                       onClick={clearTransaction}
                       disabled={isProcessing || cart.length === 0}
                     >
-                      <i className="bi bi-x-circle me-2"></i>
-                      Clear
+                      <i className="bi bi-trash3 me-2"></i>Discard Transaction
                     </button>
-                    <button
-                      className="btn btn-success flex-fill"
-                      onClick={handlePayment}
-                      disabled={
-                        isProcessing || cart.length === 0 || !selectedAccountId
-                      }
-                    >
-                      {isProcessing ? (
-                        <>
-                          <span
-                            className="spinner-border spinner-border-sm me-2"
-                            role="status"
-                          ></span>
-                          Processing...
-                        </>
-                      ) : (
-                        <>
-                          <i className="bi bi-check-circle me-2"></i>
-                          Pay ₹{grandTotal.toFixed(2)}
-                        </>
-                      )}
-                    </button>
-                  </div>
-
-                  {/* Keyboard Shortcuts */}
-                  <div className="p-2 bg-light rounded">
-                    <small className="text-muted d-block mb-1">
-                      <strong>Shortcuts:</strong>
-                    </small>
-                    <div className="row g-1">
-                      <div className="col-6">
-                        <small className="text-muted">
-                          <kbd>F1</kbd> Customer
-                        </small>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">
-                          <kbd>F2</kbd> Search
-                        </small>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">
-                          <kbd>F4</kbd> Clear
-                        </small>
-                      </div>
-                      <div className="col-6">
-                        <small className="text-muted">
-                          <kbd>F10</kbd> Pay
-                        </small>
-                      </div>
-                    </div>
                   </div>
                 </div>
               </div>

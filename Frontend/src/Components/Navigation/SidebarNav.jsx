@@ -3,6 +3,7 @@ import "bootstrap/dist/css/bootstrap.min.css";
 import "bootstrap-icons/font/bootstrap-icons.css";
 import { Link, useLocation } from "react-router-dom";
 import { useAuth } from "../../Context/AuthContext";
+import { toast } from "react-toastify";
 
 const SidebarNav = () => {
   const location = useLocation();
@@ -33,6 +34,12 @@ const SidebarNav = () => {
       label: "Sale History",
       icon: "bi-graph-up",
       path: "#sale-history",
+    },
+        {
+      id: "settings",
+      label: "Settings",
+      icon: "bi-gear-wide-connected",
+      path: "#settings",
     },
   ];
 

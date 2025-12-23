@@ -67,14 +67,6 @@ export const BillingProvider = ({ children }) => {
             }));
           setProducts(mappedProducts);
           setLastFetch((prev) => ({ ...prev, products: now }));
-          // Store in localStorage for persistent cache
-          localStorage.setItem(
-            `products_${user?.branchCode}`,
-            JSON.stringify({
-              data: mappedProducts,
-              timestamp: now,
-            })
-          );
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -111,13 +103,6 @@ export const BillingProvider = ({ children }) => {
         if (res.data.success) {
           setCustomers(res.data.data);
           setLastFetch((prev) => ({ ...prev, customers: now }));
-          localStorage.setItem(
-            `customers_${user?.branchCode}`,
-            JSON.stringify({
-              data: res.data.data,
-              timestamp: now,
-            })
-          );
         }
       } catch (error) {
         console.error("Error fetching customers:", error);
@@ -131,34 +116,6 @@ export const BillingProvider = ({ children }) => {
       CACHE_DURATION,
     ]
   );
-
-  // Load from localStorage on mount
-  useEffect(() => {
-    if (user?.branchCode) {
-      const cachedProducts = localStorage.getItem(
-        `products_${user.branchCode}`
-      );
-      if (cachedProducts) {
-        const { data, timestamp } = JSON.parse(cachedProducts);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          setProducts(data);
-          setLastFetch((prev) => ({ ...prev, products: timestamp }));
-        }
-        console.log(products);
-      }
-
-      const cachedCustomers = localStorage.getItem(
-        `customers_${user.branchCode}`
-      );
-      if (cachedCustomers) {
-        const { data, timestamp } = JSON.parse(cachedCustomers);
-        if (Date.now() - timestamp < CACHE_DURATION) {
-          setCustomers(data);
-          setLastFetch((prev) => ({ ...prev, customers: timestamp }));
-        }
-      }
-    }
-  }, [user?.branchCode, CACHE_DURATION]);
 
   // Periodic refresh
   useEffect(() => {

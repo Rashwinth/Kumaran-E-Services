@@ -474,3 +474,27 @@
     padding: 1.25rem;
   }
 }
+
+.transition-all {
+  transition: all 0.2s ease-in-out !important;
+}
+
+.btn-xs {
+  padding: 0.1rem 0.3rem;
+  font-size: 0.75rem;
+  line-height: 1.5;
+  border-radius: 0.2rem;
+}
+
+/* Hide spin-buttons for input[type="number"] */
+input::-webkit-outer-spin-button,
+input::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  appearance: none;
+  margin: 0;
+}
+
+input[type="number"] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}

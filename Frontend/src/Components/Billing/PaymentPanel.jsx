@@ -70,40 +70,7 @@ const PaymentPanel = ({
         </button>
       </div>
 
-      {/* Keyboard Shortcuts Help */}
-      <div className="mt-3 p-2 bg-light rounded">
-        <small className="text-muted d-block mb-1">
-          <strong>Keyboard Shortcuts:</strong>
-        </small>
-        <div className="row g-1">
-          <div className="col-6">
-            <small className="text-muted">
-              <kbd>F1</kbd> Add Customer
-            </small>
-          </div>
-          <div className="col-6">
-            <small className="text-muted">
-              <kbd>F2</kbd> Focus Search
-            </small>
-          </div>
-          <div className="col-6">
-            <small className="text-muted">
-              <kbd>F4</kbd> Clear Cart
-            </small>
-          </div>
-          <div className="col-6">
-            <small className="text-muted">
-              <kbd>F10</kbd> Pay Now
-            </small>
-          </div>
-          <div className="col-12">
-            <small className="text-muted">
-              <kbd>↑</kbd> <kbd>↓</kbd> Navigate • <kbd>Enter</kbd> Select •{" "}
-              <kbd>Esc</kbd> Close
-            </small>
-          </div>
-        </div>
-      </div>
+    
     </div>
   );
 };

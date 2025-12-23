@@ -92,7 +92,7 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
           <input
             ref={searchInputRef}
             type="text"
-            className="form-control border-start-0 ps-0"
+            className="form-control  border-start-0 ps-0"
             placeholder="Search by product name or SKU..."
             value={searchQuery}
             onChange={handleSearchChange}

@@ -19,7 +19,6 @@ import ProductBilling from "./Pages/Billing/productBilling";
 import LoadingPage from "./Components/Loading/LoadingPage";
 
 // Components
-import Footer from "./Components/Footer";
 import SidebarNav from "./Components/Navigation/SidebarNav";
 import TabNav from "./Components/Navigation/TabNav";
 import ScrollToTop from "./Components/ScrollToTop";
@@ -71,7 +70,6 @@ const Layout = ({ children }) => {
           <div className="content-viewport">{children}</div>
         </div>
       </div>
-      <Footer />
     </div>
   );
 };

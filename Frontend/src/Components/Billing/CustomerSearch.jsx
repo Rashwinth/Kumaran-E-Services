@@ -64,7 +64,7 @@ const CustomerSearch = ({ customers, onSelectCustomer, onAddNewCustomer }) => {
   };
 
   return (
-    <div className="position-relative mb-3">
+    <div className="position-relative mb-2">
       <div className="input-group input-group-sm">
         <span className="input-group-text bg-transparent border-end-0">
           <i className="bi bi-search text-secondary"></i>
