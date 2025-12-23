@@ -180,9 +180,9 @@ export const BranchProvider = ({ children }) => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
 
-        if (response.status === 200) {
-          setBranchInventory(response.data);
-          await setCache(cacheKey, response.data, TTL.SHORT); // Inventory changes often
+        if (response.data.success) {
+          setBranchInventory(response.data.data);
+          await setCache(cacheKey, response.data.data, TTL.SHORT); // Inventory changes often
         }
       } catch (error) {
         console.error("Error fetching inventory:", error);

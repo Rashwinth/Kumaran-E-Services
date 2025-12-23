@@ -27,6 +27,10 @@ const accountSchema = new Schema(
       required: true,
     },
     balanceHistory: [balanceSchema],
+    currentBalance: {
+      type: Number,
+      default: 0,
+    },
     status: {
       type: String,
       enum: ["Active", "Inactive", "Closed"],
@@ -36,4 +40,4 @@ const accountSchema = new Schema(
   { timestamps: true }
 );
 
-module.exports = mongoose.model("Account", accountSchema);
+module.exports = mongoose.model("accounts", accountSchema);

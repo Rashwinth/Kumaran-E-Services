@@ -3,6 +3,7 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./database/db");
+const { default: mongoose } = require("mongoose");
 
 dotenv.config();
 connectDB();
@@ -10,8 +11,8 @@ connectDB();
 const app = express();
 
 const authRoutes = require("./routes/authRoutes");
-const { default: mongoose } = require("mongoose");
 const Adminrouter = require("./routes/AdminRoutes");
+const SalesRouter = require("./routes/StaffRoute");
 
 // Middleware
 app.use(express.json());
@@ -36,6 +37,7 @@ app.use(
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/admin", Adminrouter);
+app.use("/api/sales", SalesRouter);
 
 // Health check route
 app.get("/api/health", (req, res) => {

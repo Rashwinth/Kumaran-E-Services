@@ -112,6 +112,7 @@ exports.login = async (req, res) => {
         employeeId: user.employeeId,
         phone: user.phone,
         role: user.role,
+        branchCode: user.branchCode,
         lastLogin: user.lastLogin,
       },
     });
@@ -197,6 +198,7 @@ exports.refreshToken = async (req, res) => {
         employeeId: user.employeeId,
         phone: user.phone,
         role: user.role,
+        branchCode: user.branchCode,
       },
     });
   } catch (error) {

@@ -38,7 +38,6 @@ const AddInventoryModal = ({
           lowStockThreshold: editItem.lowStockThreshold,
         });
       } else {
-    
         if (products.length === 0) getProducts();
 
         setStep(1);
@@ -92,6 +91,24 @@ const AddInventoryModal = ({
 
   const handleSubmit = (e) => {
     e.preventDefault();
+
+    // Validate against MRP
+    const productMRP = selectedProduct.mrp;
+
+    if (Number(formData.costPrice) > productMRP) {
+      alert(
+        `Cost Price (₹${formData.costPrice}) cannot exceed MRP (₹${productMRP})`
+      );
+      return;
+    }
+
+    if (Number(formData.finalPrice) > productMRP) {
+      alert(
+        `Final Price (₹${formData.finalPrice}) cannot exceed MRP (₹${productMRP})`
+      );
+      return;
+    }
+
     const inventoryData = {
       branch: branchId,
       product: selectedProduct._id,
@@ -321,7 +338,7 @@ const AddInventoryModal = ({
               </div>
 
               <div className="section-divider">
-                Pricing ({selectedProduct.unit})
+                Pricing ({selectedProduct.unit}) - MRP: ₹{selectedProduct.mrp}
               </div>
 
               <div className="form-group">
@@ -332,10 +349,26 @@ const AddInventoryModal = ({
                   value={formData.costPrice}
                   onChange={handleChange}
                   min="0"
+                  max={selectedProduct.mrp}
                   step="0.01"
                   required
                   placeholder="Rate you bought at"
+                  style={{
+                    borderColor:
+                      Number(formData.costPrice) > selectedProduct.mrp
+                        ? "#e53e3e"
+                        : undefined,
+                    backgroundColor:
+                      Number(formData.costPrice) > selectedProduct.mrp
+                        ? "#fff5f5"
+                        : undefined,
+                  }}
                 />
+                {Number(formData.costPrice) > selectedProduct.mrp && (
+                  <small style={{ color: "#e53e3e", fontWeight: "bold" }}>
+                    ⚠️ Cost Price cannot exceed MRP (₹{selectedProduct.mrp})
+                  </small>
+                )}
               </div>
 
               <div className="form-group">
@@ -362,14 +395,26 @@ const AddInventoryModal = ({
                   style={{
                     fontSize: "1.1rem",
                     fontWeight: "bold",
-                    borderColor: "#48bb78",
-                    backgroundColor: "#f0fff4",
+                    borderColor:
+                      Number(formData.finalPrice) > selectedProduct.mrp
+                        ? "#e53e3e"
+                        : "#48bb78",
+                    backgroundColor:
+                      Number(formData.finalPrice) > selectedProduct.mrp
+                        ? "#fff5f5"
+                        : "#f0fff4",
                     cursor: "not-allowed",
                   }}
                 />
-                <small style={{ color: "#718096" }}>
-                  Calculated as: Cost Price + (Cost Price × Margin %)
-                </small>
+                {Number(formData.finalPrice) > selectedProduct.mrp ? (
+                  <small style={{ color: "#e53e3e", fontWeight: "bold" }}>
+                    ⚠️ Final Price cannot exceed MRP (₹{selectedProduct.mrp})
+                  </small>
+                ) : (
+                  <small style={{ color: "#718096" }}>
+                    Calculated as: Cost Price + (Cost Price × Margin %)
+                  </small>
+                )}
               </div>
             </div>
           )}

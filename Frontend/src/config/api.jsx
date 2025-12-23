@@ -9,4 +9,9 @@ export const API_ENDPOINTS = {
     VERIFY_BRANCH: `${API_BASE}/api/auth/branches/verify`,
     REGISTER: `${API_BASE}/api/auth/register`,
   },
+  SALES: `${API_BASE}/api/sales`,
+  BRANCH_ACCOUNTS: `${API_BASE}/api/sales/accounts/my-branch`,
+  BRANCH_INVENTORY: `${API_BASE}/api/sales/inventory/my-branch`,
+  CUSTOMERS: `${API_BASE}/api/sales/customers`,
+  CUSTOMER_SEARCH: `${API_BASE}/api/sales/customers/search`,
 };

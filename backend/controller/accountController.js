@@ -104,6 +104,10 @@ exports.createAccount = async (req, res) => {
       upiAccountName: type === "Upi" ? upiAccountName : undefined,
       branch,
       balanceHistory: balanceHistory || [],
+      currentBalance:
+        balanceHistory && balanceHistory.length > 0
+          ? balanceHistory[balanceHistory.length - 1].closingBalance
+          : 0,
       status: status || "Active",
     });
 
@@ -262,6 +266,7 @@ exports.addBalanceHistory = async (req, res) => {
       openingBalance,
       closingBalance,
     });
+    account.currentBalance = closingBalance;
 
     await account.save();
     const populatedAccount = await Account.findById(account._id).populate(
@@ -278,6 +283,39 @@ exports.addBalanceHistory = async (req, res) => {
     res.status(500).json({
       success: false,
       message: error.message || "Server error while adding balance history",
+    });
+  }
+};
+// @desc    Get accounts for the logged-in user's branch
+// @route   GET /api/accounts/my-branch
+// @access  Private (Staff/Admin/Manager)
+exports.getMyBranchAccounts = async (req, res) => {
+  try {
+    const branch = await require("../models/Branch").findOne({
+      code: req.user.branchCode,
+    });
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found for the user",
+      });
+    }
+
+    const accounts = await Account.find({
+      branch: branch._id,
+      status: "Active",
+    });
+
+    res.status(200).json({
+      success: true,
+      count: accounts.length,
+      data: accounts,
+    });
+  } catch (error) {
+    console.error("Get my branch accounts error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching branch accounts",
     });
   }
 };

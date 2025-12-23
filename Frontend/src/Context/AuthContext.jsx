@@ -77,12 +77,30 @@ export const AuthProvider = ({ children }) => {
     initAuth();
   }, [refreshAccessToken]);
 
-  // Axios interceptor to add token to requests
+  // Handle Authorization header
+  useEffect(() => {
+    if (accessToken) {
+      axios.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+    } else {
+      delete axios.defaults.headers.common["Authorization"];
+    }
+  }, [accessToken]);
+
+  // Axios interceptor to add token to requests as a backup/refinement
   useEffect(() => {
     const requestInterceptor = axios.interceptors.request.use(
       (config) => {
-        // Only attach token if it's our API and it's not a refresh/verify call that might have separate requirements
-        if (accessToken && config.url?.startsWith(API_BASE)) {
+        // If for some reason the default header is missing, add it here
+        // or if the request is specifically to our API and the token is available.
+        // The default header should handle most cases, this is a fallback/refinement.
+        const isApiRequest =
+          config.url?.startsWith(API_BASE) ||
+          config.url?.startsWith("/api") ||
+          config.url?.startsWith("/admin") ||
+          (API_BASE &&
+            config.url?.includes(API_BASE.replace(/^https?:\/\//, "")));
+
+        if (accessToken && isApiRequest && !config.headers.Authorization) {
           config.headers.Authorization = `Bearer ${accessToken}`;
         }
         return config;

@@ -14,6 +14,7 @@ const BranchProducts = () => {
     addInventory: addInventoryApi,
     updateInventory,
     deleteInventory,
+    loading,
   } = useBranch();
 
   const [searchTerm, setSearchTerm] = useState("");
@@ -45,15 +46,18 @@ const BranchProducts = () => {
   }
   console.log(branchInventory);
 
+  // Ensure branchInventory is an array to prevent crashes
+  const safeInventory = Array.isArray(branchInventory) ? branchInventory : [];
+
   // Extract unique categories from loaded inventory
   const categories = [
     "All",
     ...new Set(
-      branchInventory.map((item) => item.product?.category?.name || "General")
+      safeInventory.map((item) => item.product?.category?.name || "General")
     ),
   ];
 
-  const filteredProducts = branchInventory.filter((item) => {
+  const filteredProducts = safeInventory.filter((item) => {
     // Inventory item structure: { product: { name, ... }, quantity, ... }
     const productName = item.product?.name || "";
     const categoryName = item.product?.category?.name || "General";
@@ -218,114 +222,132 @@ const BranchProducts = () => {
       </div>
 
       <div className="products-grid">
-        {filteredProducts.map((item) => {
-          // Helper for easier access
-          const product = item.product || {};
-          const status = getStatus(item.quantity, item.lowStockThreshold);
-
-          return (
-            <div key={item._id} className="product-card">
-              <div className="product-info">
-                <h3>{product.name}</h3>
-                <p className="product-category">
-                  {product.category?.name || "General"}
-                </p>
-                <p className="product-price">
-                  ₹{item.FinalPrice}/{product.unit}
-                </p>
-              </div>
-              <div className="product-stock">
-                <div className="stock-info-row">
-                  <span className={`stock-badge ${getStockClass(status)}`}>
-                    {status}
-                  </span>
-                  <p className="stock-quantity">{item.quantity} units</p>
-                </div>
-
-                <div className="quick-stock-actions">
-                  {editingStockId === item._id ? (
-                    <div className="quick-stock-form">
-                      <input
-                        type="number"
-                        value={newStockValue}
-                        onChange={(e) => setNewStockValue(e.target.value)}
-                        className="stock-input"
-                        onClick={(e) => e.stopPropagation()}
-                        autoFocus
-                        placeholder="Qty"
-                      />
-                      <button
-                        className="btn-save-stock"
-                        onClick={() => saveQuickStockEdit(item._id)}
-                      >
-                        Save
-                      </button>
-                      <button
-                        className="btn-cancel-stock"
-                        onClick={cancelQuickStockEdit}
-                      >
-                        Cancel
-                      </button>
-                    </div>
-                  ) : (
-                    <button
-                      className="btn-quick-update"
-                      onClick={() => startQuickStockEdit(item)}
-                    >
-                      <svg
-                        width="14"
-                        height="14"
-                        viewBox="0 0 24 24"
-                        fill="none"
-                        stroke="currentColor"
-                        strokeWidth="2"
-                      >
-                        <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
-                        <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
-                      </svg>
-                      Update Stock
-                    </button>
-                  )}
-                </div>
-              </div>
-              <div className="product-actions">
-                <button
-                  className="btn-edit"
-                  onClick={() => handleEditClick(item)}
-                >
-                  Edit
-                </button>
-                <button
-                  className="btn-delete"
-                  onClick={() => handleDeleteClick(item)}
-                >
-                  Delete
-                </button>
-              </div>
+        {loading ? (
+          <div className="w-100 text-center py-5">
+            <div className="spinner-border text-primary" role="status">
+              <span className="visually-hidden">Loading...</span>
             </div>
-          );
-        })}
-      </div>
+          </div>
+        ) : safeInventory.length === 0 ? (
+          <div className="no-data-msg w-100 text-center py-5">
+            <h3>No inventory items in this branch</h3>
+            <p className="text-muted">
+              Click 'Add New Product' to stock this branch.
+            </p>
+          </div>
+        ) : filteredProducts.length === 0 ? (
+          <div className="no-products w-100 text-center py-5">
+            <svg
+              viewBox="0 0 24 24"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+              width="64"
+              height="64"
+              className="text-secondary mb-3"
+            >
+              <path
+                d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            </svg>
+            <h3>No products match your search</h3>
+            <p className="text-muted">
+              Try adjusting your filters or search term
+            </p>
+          </div>
+        ) : (
+          filteredProducts.map((item) => {
+            // Helper for easier access
+            const product = item.product || {};
+            const status = getStatus(item.quantity, item.lowStockThreshold);
 
-      {filteredProducts.length === 0 && (
-        <div className="no-products">
-          <svg
-            viewBox="0 0 24 24"
-            fill="none"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path
-              d="M21 21L15 15M17 10C17 13.866 13.866 17 10 17C6.13401 17 3 13.866 3 10C3 6.13401 6.13401 3 10 3C13.866 3 17 6.13401 17 10Z"
-              stroke="currentColor"
-              strokeWidth="2"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-          <h3>No products found</h3>
-          <p>Try adjusting your search or filters</p>
-        </div>
-      )}
+            return (
+              <div key={item._id} className="product-card">
+                <div className="product-info">
+                  <h3>{product.name}</h3>
+                  <p className="product-category">
+                    {product.category?.name || "General"}
+                  </p>
+                  <p className="product-price">
+                    ₹{item.FinalPrice}/{product.unit}
+                  </p>
+                </div>
+                <div className="product-stock">
+                  <div className="stock-info-row">
+                    <span className={`stock-badge ${getStockClass(status)}`}>
+                      {status}
+                    </span>
+                    <p className="stock-quantity">{item.quantity} units</p>
+                  </div>
+
+                  <div className="quick-stock-actions">
+                    {editingStockId === item._id ? (
+                      <div className="quick-stock-form">
+                        <input
+                          type="number"
+                          value={newStockValue}
+                          onChange={(e) => setNewStockValue(e.target.value)}
+                          className="stock-input"
+                          onClick={(e) => e.stopPropagation()}
+                          autoFocus
+                          placeholder="Qty"
+                        />
+                        <button
+                          className="btn-save-stock"
+                          onClick={() => saveQuickStockEdit(item._id)}
+                        >
+                          Save
+                        </button>
+                        <button
+                          className="btn-cancel-stock"
+                          onClick={cancelQuickStockEdit}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        className="btn-quick-update"
+                        onClick={() => startQuickStockEdit(item)}
+                      >
+                        <svg
+                          width="14"
+                          height="14"
+                          viewBox="0 0 24 24"
+                          fill="none"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                        >
+                          <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7" />
+                          <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z" />
+                        </svg>
+                        Update Stock
+                      </button>
+                    )}
+                  </div>
+                </div>
+                <div className="product-actions">
+                  <button
+                    className="btn-edit"
+                    onClick={() => handleEditClick(item)}
+                  >
+                    Edit
+                  </button>
+                  <button
+                    className="btn-delete"
+                    onClick={() => handleDeleteClick(item)}
+                  >
+                    Delete
+                  </button>
+                </div>
+              </div>
+            );
+          })
+        )}
+      </div>
 
       {/* Universal Delete Modal */}
       <UniversalDelete
