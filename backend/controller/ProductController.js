@@ -219,3 +219,28 @@ exports.deleteProduct = async (req, res) => {
     });
   }
 };
+
+
+
+
+//<---------------------------------------------------------------->STAFF PRODUCT CONTROLLER <---------------------------------------------------->//
+
+exports.GetProdctBYBranch=async(req,res)=>{
+  try {
+    const {BranchId}=req.params
+  const InventoProducts=await Inventory.find({BranchId}).populate("Product")
+ console.log(InventoProducts);
+ 
+    // res.status(200).json({
+    //   success: true,
+    //   count: products.length,
+    //   data: products,
+    // });
+  } catch (error) {
+    console.error("Get products error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching products",
+    });
+  }
+}

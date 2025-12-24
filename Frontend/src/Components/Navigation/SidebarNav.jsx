@@ -21,7 +21,7 @@ const SidebarNav = () => {
       id: "product-catalog",
       label: "Product Catalog",
       icon: "bi-box-seam",
-      path: "#product-catalog",
+      path: "/product-catalog",
     },
     {
       id: "investors",
@@ -39,7 +39,7 @@ const SidebarNav = () => {
       id: "settings",
       label: "Settings",
       icon: "bi-gear-wide-connected",
-      path: "#settings",
+      path: "/settings",
     },
   ];
 

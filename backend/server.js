@@ -37,7 +37,7 @@ app.use(
 // Routes
 app.use("/api/auth", authRoutes);
 app.use("/admin", Adminrouter);
-app.use("/api/sales", SalesRouter);
+app.use("/api/staff", SalesRouter);
 
 // Health check route
 app.get("/api/health", (req, res) => {

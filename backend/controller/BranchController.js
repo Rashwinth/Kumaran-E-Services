@@ -691,3 +691,41 @@ exports.getBranchStats = async (req, res) => {
     });
   }
 };
+
+//<--------------------STAFF<-------------->//
+
+exports.getBranchBycode = async (req, res) => {
+  try {
+    const { branchcode } = req.params;
+
+    const branch = await Branch.findOne({ code: branchcode }).select(
+      "-password -AccessCode -contact  -OwnerShip -leasedetails -rentdetails -address"
+    );
+
+    if (!branch) {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found",
+      });
+    }
+
+    res.status(200).json({
+      success: true,
+      branch,
+    });
+  } catch (error) {
+    console.error("Get branch error:", error);
+
+    if (error.kind === "ObjectId") {
+      return res.status(404).json({
+        success: false,
+        message: "Branch not found",
+      });
+    }
+
+    res.status(500).json({
+      success: false,
+      message: "Server error while fetching branch",
+    });
+  }
+};

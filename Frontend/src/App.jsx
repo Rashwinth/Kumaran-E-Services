@@ -25,6 +25,8 @@ import ScrollToTop from "./Components/ScrollToTop";
 
 // Context
 import { useAuth } from "./Context/AuthContext";
+import Settings from "./Pages/Branch/Settings";
+import ProductsCatalog from "./Pages/Branch/ProductsCatalog";
 
 // Style
 
@@ -91,6 +93,9 @@ function AppContent() {
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/billing" element={<ProductBilling />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/product-catalog" element={<ProductsCatalog />} />
+
             {/* Add more protected routes here */}
           </Route>
 

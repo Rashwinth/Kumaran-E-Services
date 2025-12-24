@@ -126,9 +126,29 @@ const ProductBilling = () => {
     }
   };
 
+  const fetchBranch = async () => {
+    const branchcode = localStorage.getItem("branchCode");
+    
+    try {
+      const res = await axios.get(`${API_ENDPOINTS.BRANCH}/${branchcode}`, {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      
+      if (res.data.success) {
+        const branch = res.data.branch;
+        if (branch) {
+          localStorage.setItem("branch", JSON.stringify(branch));
+        }
+      }
+    } catch (error) {
+      toast.error("Failed to load branch");
+    }
+  };
+
   useEffect(() => {
     if (accessToken) {
       fetchAccounts();
+      fetchBranch();
     }
   }, [accessToken]);
 
@@ -322,7 +342,7 @@ const ProductBilling = () => {
                 >
                   F1
                 </kbd>
-               New Customer
+                New Customer
               </small>
               <small className="text-muted" style={{ fontSize: "0.75rem" }}>
                 <kbd
