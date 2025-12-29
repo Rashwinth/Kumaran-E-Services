@@ -25,12 +25,10 @@ export const ProductProvider = ({ children }) => {
   const [subCategories, setSubCategories] = useState([]);
   const [productsLoading, setProductsLoading] = useState(true);
 
-  const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api/staff`
+  const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api/staff`;
   const { accessToken } = useAuth();
-  const branch= JSON.parse(localStorage.getItem("branch"))
-  const BranchId=branch._id
-    console.log(BranchId);
-
+  const branch = JSON.parse(localStorage.getItem("branch"));
+  const BranchId = branch._id;
 
   // Fetch all products
   const getProducts = useCallback(
@@ -151,8 +149,6 @@ export const ProductProvider = ({ children }) => {
       return [];
     }
   };
-
-
 
   return (
     <ProductContext.Provider

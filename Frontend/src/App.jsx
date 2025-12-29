@@ -81,7 +81,7 @@ function AppContent() {
     <Router>
       <ScrollToTop />
       <Layout>
-        <ToastContainer position="top-right" autoClose={3000} theme="light" />
+        <ToastContainer position="top-center" autoClose={3000} />
 
         <Routes>
           {/* Public Routes */}

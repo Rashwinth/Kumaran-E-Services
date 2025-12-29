@@ -10,6 +10,7 @@ import LoadingPage from "../../Components/Loading/LoadingPage";
 import ProductSearch from "../../Components/Billing/ProductSearch";
 import CustomerSearch from "../../Components/Billing/CustomerSearch";
 import CustomerModal from "../../Components/Billing/CustomerModal";
+import { removeCache, CACHE_KEYS } from "../../utils/cacheUtils";
 
 const ProductBilling = () => {
   const {
@@ -17,6 +18,7 @@ const ProductBilling = () => {
     customers: allCustomers,
     loading: billingLoading,
     refreshCustomers,
+    refreshProducts,
   } = useBilling();
   const { user, accessToken } = useAuth();
 
@@ -64,9 +66,19 @@ const ProductBilling = () => {
 
   // Cart Functions
   const addToCart = (product) => {
+    if (product.availableQty <= 0) {
+      return toast.error(`${product.name} is out of stock!`);
+    }
+
     setCart((prev) => {
       const existing = prev.find((item) => item._id === product._id);
       if (existing) {
+        if (existing.qty + 1 > product.availableQty) {
+          toast.error(
+            `Only ${product.availableQty} units available for ${product.name}`
+          );
+          return prev;
+        }
         return prev.map((item) =>
           item._id === product._id ? { ...item, qty: item.qty + 1 } : item
         );
@@ -76,9 +88,20 @@ const ProductBilling = () => {
   };
 
   const setQty = (id, val) => {
-    const qty = Math.max(1, parseInt(val) || 0);
+    const requestedQty = Math.max(1, parseInt(val) || 0);
     setCart((prev) =>
-      prev.map((item) => (item._id === id ? { ...item, qty } : item))
+      prev.map((item) => {
+        if (item._id === id) {
+          if (requestedQty > item.availableQty) {
+            toast.error(
+              `Only ${item.availableQty} units available for ${item.name}`
+            );
+            return { ...item, qty: item.availableQty };
+          }
+          return { ...item, qty: requestedQty };
+        }
+        return item;
+      })
     );
   };
 
@@ -128,12 +151,12 @@ const ProductBilling = () => {
 
   const fetchBranch = async () => {
     const branchcode = localStorage.getItem("branchCode");
-    
+
     try {
       const res = await axios.get(`${API_ENDPOINTS.BRANCH}/${branchcode}`, {
         headers: { Authorization: `Bearer ${accessToken}` },
       });
-      
+
       if (res.data.success) {
         const branch = res.data.branch;
         if (branch) {
@@ -160,6 +183,14 @@ const ProductBilling = () => {
     }
     if (!selectedAccountId)
       return toast.warning("Please select a payment account!");
+
+    // Final stock check
+    const stockError = cart.find((item) => item.qty > item.availableQty);
+    if (stockError) {
+      return toast.error(
+        `Stock mismatch for ${stockError.name}. Available: ${stockError.availableQty}`
+      );
+    }
 
     const selectedAccount = accounts.find((a) => a._id === selectedAccountId);
     if (selectedAccount?.type === "Credits" && !selectedCustomerId) {
@@ -206,6 +237,16 @@ const ProductBilling = () => {
           // Placeholder for actual print logic
           // window.print() or redirect to a print view
           console.log("Printing invoice...");
+        }
+
+        // Clear browser cache for products and inventory to ensure consistency
+        await removeCache(CACHE_KEYS.PRODUCTS);
+        await removeCache(CACHE_KEYS.INVENTORY);
+
+        // Refresh accounts and inventory to show updated balances/stock
+        await fetchAccounts();
+        if (typeof refreshProducts === "function") {
+          refreshProducts();
         }
 
         clearTransaction();
@@ -568,10 +609,21 @@ const ProductBilling = () => {
                                 {item.name}
                               </div>
                               <div
-                                className="text-muted"
+                                className="d-flex gap-2 align-items-center"
                                 style={{ fontSize: "0.7rem" }}
                               >
-                                #{item.sku}
+                                <span className="text-muted">#{item.sku}</span>
+                                <span
+                                  className={`badge ${
+                                    item.availableQty <=
+                                    (item.lowStockThreshold || 5)
+                                      ? "bg-danger-subtle text-danger"
+                                      : "bg-success-subtle text-success"
+                                  } px-1`}
+                                  style={{ fontSize: "0.65rem" }}
+                                >
+                                  Stock: {item.availableQty} {item.unit}
+                                </span>
                               </div>
                             </td>
                             <td className="text-center">

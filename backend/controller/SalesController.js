@@ -58,8 +58,20 @@ exports.createSale = async (req, res) => {
     const dateKey = today.toISOString().slice(0, 10);
     const dateStr = dateKey.replace(/-/g, "");
 
-    const randomStr = Math.floor(1000 + Math.random() * 9000);
-    const billNumber = `${req.user.branchCode}-${dateStr}-${randomStr}`;
+    // 2. Fetch Account to check type
+    const account = await Account.findById(paymentMethod).session(session);
+    if (!account) {
+      throw new Error("Payment account not found");
+    }
+
+    // Determine status based on payment method
+    const saleStatus = account.type === "Credits" ? "Pending" : "Completed";
+
+    // Increment sequential bill number
+    branch.lastBillNumber += 1;
+    await branch.save({ session });
+
+    const billNumber = `${req.user.branchCode}-${dateStr}-${branch.lastBillNumber}`;
 
     const individualSale = {
       billNumber,
@@ -70,18 +82,9 @@ exports.createSale = async (req, res) => {
       grandTotal,
       paymentMethod,
       staff: req.user.id,
-      status: "Completed",
+      status: saleStatus,
       createdAt: new Date(),
     };
-
-    // 2. Fetch Account to check type
-    const account = await Account.findById(paymentMethod).session(session);
-    const accounts = await Account.find().session(session);
-    console.log(account, accounts);
-
-    if (!account) {
-      throw new Error("Payment account not found");
-    }
 
     // If payment is "Credits", we must have a real customer (not walk-in with phone 0000000000)
     if (account.type === "Credits") {
@@ -102,16 +105,22 @@ exports.createSale = async (req, res) => {
     }
 
     // 3. Update/Create Daily Sale Record
+    const updateData = {
+      $push: { sales: individualSale },
+    };
+
+    // Only update daily totals if payment is received (Completed status)
+    if (saleStatus === "Completed") {
+      updateData.$inc = {
+        daySubtotal: subtotal,
+        dayTotalTax: totalTax,
+        dayGrandTotal: grandTotal,
+      };
+    }
+
     const saleRecord = await Sale.findOneAndUpdate(
       { date: dateKey, branch: branch._id },
-      {
-        $push: { sales: individualSale },
-        $inc: {
-          daySubtotal: subtotal,
-          dayTotalTax: totalTax,
-          dayGrandTotal: grandTotal,
-        },
-      },
+      updateData,
       { upsert: true, new: true, session }
     );
 
@@ -156,7 +165,20 @@ exports.createSale = async (req, res) => {
           branch: branch._id,
           quantity: { $gte: item.qty },
         },
-        { $inc: { quantity: -item.qty } },
+        [
+          {
+            $set: {
+              quantity: { $subtract: ["$quantity", item.qty] },
+              isActive: {
+                $cond: {
+                  if: { $eq: [{ $subtract: ["$quantity", item.qty] }, 0] },
+                  then: false,
+                  else: "$isActive",
+                },
+              },
+            },
+          },
+        ],
         { session, new: true }
       );
 
@@ -165,10 +187,6 @@ exports.createSale = async (req, res) => {
           `Failed to update inventory for ${currentInventory.product.name}`
         );
       }
-
-      console.log(
-        `✅ Inventory updated: ${currentInventory.product.name} - Sold: ${item.qty}, Remaining: ${inventoryUpdate.quantity}`
-      );
     }
 
     await session.commitTransaction();

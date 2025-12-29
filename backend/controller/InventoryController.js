@@ -59,6 +59,11 @@ const addInventory = async (req, res) => {
       inventory.FinalPrice = FinalPrice;
       inventory.lowStockThreshold = lowStockThreshold;
 
+      // Auto-reactivate if stock is added
+      if (inventory.quantity > 0) {
+        inventory.isActive = true;
+      }
+
       await inventory.save();
       await inventory.populate({
         path: "product",
@@ -79,6 +84,7 @@ const addInventory = async (req, res) => {
       sellingPrice,
       FinalPrice,
       lowStockThreshold,
+      isActive: quantity > 0,
     });
 
     await inventory.populate({
@@ -211,6 +217,13 @@ const updateInventory = async (req, res) => {
       lowStockThreshold !== undefined
         ? lowStockThreshold
         : inventory.lowStockThreshold;
+
+    // Auto-manage isActive based on quantity
+    if (inventory.quantity > 0) {
+      inventory.isActive = true;
+    } else {
+      inventory.isActive = false;
+    }
 
     await inventory.save();
     await inventory.populate({

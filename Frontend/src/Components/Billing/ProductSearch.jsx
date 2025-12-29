@@ -159,10 +159,14 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
                       className={
                         index === selectedIndex
                           ? "text-white opacity-75"
+                          : product.availableQty <= 0
+                          ? "text-danger fw-bold"
                           : "text-muted"
                       }
                     >
-                      Stock: {product.availableQty}
+                      {product.availableQty <= 0
+                        ? "OUT OF STOCK"
+                        : `Stock: ${product.availableQty}`}
                     </small>
                   </div>
                 </div>

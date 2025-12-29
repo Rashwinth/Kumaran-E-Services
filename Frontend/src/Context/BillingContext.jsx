@@ -59,11 +59,15 @@ export const BillingProvider = ({ children }) => {
               sku: item.product.sku,
               price: item.FinalPrice, // Selling price
               mrp: item.product.mrp,
+              costPrice: item.costPrice,
+              sellingPrice: item.sellingPrice,
               gst: item.product.gst
                 ? (item.product.gst.cgst || 0) + (item.product.gst.sgst || 0)
                 : 0,
               availableQty: item.quantity,
               category: item.product.category?.name,
+              lowStockThreshold: item.lowStockThreshold || 5,
+              unit: item.product.unit || "pcs",
             }));
           setProducts(mappedProducts);
           setLastFetch((prev) => ({ ...prev, products: now }));

@@ -1,3 +1,4 @@
+const Inventory = require("../models/Inventory");
 const Product = require("../models/Product");
 
 // @desc    Get all products
@@ -228,14 +229,15 @@ exports.deleteProduct = async (req, res) => {
 exports.GetProdctBYBranch=async(req,res)=>{
   try {
     const {BranchId}=req.params
-  const InventoProducts=await Inventory.find({BranchId}).populate("Product")
- console.log(InventoProducts);
+    
+  const InventoProducts=await Inventory.find({branch:BranchId}).populate("product")
+//  console.log(InventoProducts);
  
-    // res.status(200).json({
-    //   success: true,
-    //   count: products.length,
-    //   data: products,
-    // });
+    res.status(200).json({
+      success: true,
+      count: InventoProducts.length,
+      data: InventoProducts,
+    });
   } catch (error) {
     console.error("Get products error:", error);
     res.status(500).json({

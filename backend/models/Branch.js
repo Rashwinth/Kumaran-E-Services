@@ -73,6 +73,10 @@ const branchSchema = new mongoose.Schema(
       enum: ["Active", "Inactive"],
       default: "Active",
     },
+    lastBillNumber: {
+      type: Number,
+      default: 1000, // Starts from 1001
+    },
   },
   { timestamps: true }
 );

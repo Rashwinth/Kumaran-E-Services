@@ -7,10 +7,13 @@ const {
   upsertCustomer,
   searchByPhone,
 } = require("../controller/customerController");
-const {  getInventoryByBranchStaff } = require("../controller/InventoryController");
+const {
+  getInventoryByBranchStaff,
+} = require("../controller/InventoryController");
 const { protect } = require("../middleware/auth");
-const {  getBranchBycode } = require("../controller/BranchController");
+const { getBranchBycode } = require("../controller/BranchController");
 const { GetProdctBYBranch } = require("../controller/ProductController");
+const { getAllCategories } = require("../controller/CategoryController");
 
 // Sales routes
 router.post("/", protect, createSale);
@@ -28,13 +31,10 @@ router.post("/customers", protect, upsertCustomer);
 router.get("/customers/search/:phone", protect, searchByPhone);
 
 //get brabch products
-router.get("/products/:BranchId", protect,GetProdctBYBranch );
-
-
+router.get("/products/:BranchId", protect, GetProdctBYBranch);
 
 //branch route
-router.get("/Branch/:branchcode", protect,getBranchBycode );
-
-
+router.get("/Branch/:branchcode", protect, getBranchBycode);
+router.get("/categories", protect, getAllCategories);
 
 module.exports = router;
