@@ -6,21 +6,45 @@ import { useAuth } from "../../Context/AuthContext";
 // Sub-components
 import SettingsSidebar from "../../Components/Settings/SettingsSidebar";
 import GeneralSettings from "../../Components/Settings/GeneralSettings";
+import AccountsSettings from "../../Components/Settings/AccountsSettings";
 import HardwareSettings from "../../Components/Settings/HardwareSettings";
 import SyncSettings from "../../Components/Settings/SyncSettings";
 import AboutSettings from "../../Components/Settings/AboutSettings";
+import { saveEncrypted, getDecrypted } from "../../utils/storage";
 
 function Settings() {
   const { user } = useAuth();
   const [activeTab, setActiveTab] = useState("general");
-  const [settings, setSettings] = useState({
-    language: localStorage.getItem("setting_lang") || "English",
-    currency: localStorage.getItem("setting_currency") || "INR (₹)",
-    dateFormat: localStorage.getItem("setting_date_format") || "DD/MM/YYYY",
-    paperSize: localStorage.getItem("setting_paper_size") || "80mm",
-    autoPrint: localStorage.getItem("setting_auto_print") === "true",
-    printPreview: localStorage.getItem("setting_print_preview") === "true",
-    barcodeScanner: localStorage.getItem("setting_barcode_enabled") === "true",
+
+  const [settings, setSettings] = useState(() => {
+    const saved = getDecrypted("app_settings");
+    return {
+      language:
+        saved?.language || localStorage.getItem("setting_lang") || "English",
+      currency:
+        saved?.currency ||
+        localStorage.getItem("setting_currency") ||
+        "INR (₹)",
+      dateFormat:
+        saved?.dateFormat ||
+        localStorage.getItem("setting_date_format") ||
+        "DD/MM/YYYY",
+      paperSize:
+        saved?.paperSize ||
+        localStorage.getItem("setting_paper_size") ||
+        "80mm",
+      autoPrint:
+        saved?.autoPrint ??
+        localStorage.getItem("setting_auto_print") === "true",
+      printPreview:
+        saved?.printPreview ??
+        localStorage.getItem("setting_print_preview") === "true",
+      barcodeScanner:
+        saved?.barcodeScanner ??
+        localStorage.getItem("setting_barcode_enabled") === "true",
+      rounding: saved?.rounding || "none",
+      roundingValue: saved?.roundingValue || 10,
+    };
   });
 
   const [branchInfo, setBranchInfo] = useState({
@@ -54,16 +78,8 @@ function Settings() {
   };
 
   const saveSettings = () => {
-    Object.entries(settings).forEach(([key, value]) => {
-      localStorage.setItem(
-        `setting_${key.replace(
-          /[A-Z]/g,
-          (letter) => `_${letter.toLowerCase()}`
-        )}`,
-        value
-      );
-    });
-    toast.success("Settings saved successfully!");
+    saveEncrypted("app_settings", settings);
+    toast.success("Settings saved securely!");
   };
 
   const handleSync = () => {
@@ -100,6 +116,8 @@ function Settings() {
             />
           )}
 
+          {activeTab === "accounts" && <AccountsSettings />}
+
           {activeTab === "hardware" && (
             <HardwareSettings
               settings={settings}
@@ -112,11 +130,13 @@ function Settings() {
 
           {activeTab === "about" && <AboutSettings />}
 
-          <div className="d-flex justify-content-end">
-            <button className="btn-save-settings" onClick={saveSettings}>
-              Save Preferences
-            </button>
-          </div>
+          {activeTab !== "accounts" && (
+            <div className="d-flex justify-content-end">
+              <button className="btn-save-settings" onClick={saveSettings}>
+                Save Preferences
+              </button>
+            </div>
+          )}
         </div>
       </div>
     </div>

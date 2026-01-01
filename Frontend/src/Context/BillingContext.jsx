@@ -61,6 +61,7 @@ export const BillingProvider = ({ children }) => {
               mrp: item.product.mrp,
               costPrice: item.costPrice,
               sellingPrice: item.sellingPrice,
+              gstType: item.product.gstType || "NotIncluded",
               gst: item.product.gst
                 ? (item.product.gst.cgst || 0) + (item.product.gst.sgst || 0)
                 : 0,

@@ -110,8 +110,14 @@ router.delete("/accounts/:id", protect, authorize("admin"), deleteAccount);
 router.post(
   "/accounts/:id/balance",
   protect,
-  authorize("admin"),
+  authorize("admin", "manager"),
   addBalanceHistory
+);
+router.post(
+  "/accounts/:id/close",
+  protect,
+  authorize("admin", "manager", "staff"),
+  require("../controller/accountController").closeAccount
 );
 
 // Protected routes - Product Management

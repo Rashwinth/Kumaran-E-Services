@@ -30,7 +30,7 @@ const PaymentPanel = ({
                 acc.type === "Cash"
                   ? "bi-cash-stack"
                   : acc.type === "Upi"
-                  ? "bi-phone"
+                  ? "bi-qr-code"
                   : "bi-credit-card"
               } me-2`}
             ></i>

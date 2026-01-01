@@ -1,6 +1,11 @@
 import React, { useState, useRef, useEffect } from "react";
 
-const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
+const ProductSearch = ({
+  products,
+  onAddToCart,
+  searchInputRef,
+  barcodeScannerEnabled,
+}) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
@@ -15,10 +20,27 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
       const filtered = products.filter(
         (p) =>
           p.name.toLowerCase().includes(query.toLowerCase()) ||
+          p.sku.toLowerCase() === query.toLowerCase() || // Exact SKU Match
           p.sku.toLowerCase().includes(query.toLowerCase())
       );
-      setSuggestions(filtered);
+
+      // Barcode Scanner Optimization: If exact SKU match is found, prioritize it
+      const exactMatch = filtered.find(
+        (p) => p.sku.toLowerCase() === query.toLowerCase()
+      );
+      if (exactMatch) {
+        setSuggestions([
+          exactMatch,
+          ...filtered.filter((p) => p._id !== exactMatch._id),
+        ]);
+      } else {
+        setSuggestions(filtered);
+      }
+
       setShowSuggestions(true);
+
+      // If exact SKU match and it's likely a barcode scan (long string, fast input)
+      // we could auto-add, but handleSearchSubmit usually handles the 'Enter' from scanner
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -28,14 +50,24 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
   const handleSearchSubmit = (e) => {
     e.preventDefault();
     if (suggestions.length > 0) {
+      // Prioritize exact SKU match if available
+      const exactMatch = suggestions.find(
+        (p) => p.sku.toLowerCase() === searchQuery.trim().toLowerCase()
+      );
       const productToAdd =
-        selectedIndex >= 0 ? suggestions[selectedIndex] : suggestions[0];
+        exactMatch ||
+        (selectedIndex >= 0 ? suggestions[selectedIndex] : suggestions[0]);
+
       onAddToCart(productToAdd);
       clearSearch();
     }
   };
 
   const handleKeyDown = (e) => {
+    if (e.key === "Enter" && searchQuery.trim()) {
+      // Logic handled by handleSearchSubmit
+    }
+
     if (!showSuggestions || suggestions.length === 0) return;
 
     switch (e.key) {
@@ -48,16 +80,6 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
       case "ArrowUp":
         e.preventDefault();
         setSelectedIndex((prev) => (prev > 0 ? prev - 1 : -1));
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (selectedIndex >= 0) {
-          onAddToCart(suggestions[selectedIndex]);
-          clearSearch();
-        } else if (suggestions.length > 0) {
-          onAddToCart(suggestions[0]);
-          clearSearch();
-        }
         break;
       case "Escape":
         e.preventDefault();
@@ -82,32 +104,60 @@ const ProductSearch = ({ products, onAddToCart, searchInputRef }) => {
     clearSearch();
   };
 
+  const handleScannerFocus = () => {
+    searchInputRef.current?.focus();
+    searchInputRef.current?.select();
+  };
+
   return (
     <div className="position-relative w-100">
       <form onSubmit={handleSearchSubmit} className="d-flex gap-2">
-        <div className="input-group flex-grow-1">
+        <div className="input-group flex-grow-1 shadow-sm">
           <span className="input-group-text bg-white border-end-0">
             <i className="bi bi-search text-primary"></i>
           </span>
           <input
             ref={searchInputRef}
             type="text"
-            className="form-control  border-start-0 ps-0"
-            placeholder="Search by product name or SKU..."
+            className="form-control border-start-0 ps-0 fw-medium"
+            placeholder={
+              barcodeScannerEnabled
+                ? "Scan Barcode or Search..."
+                : "Search Product Name or SKU..."
+            }
             value={searchQuery}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
             onFocus={() => searchQuery && setShowSuggestions(true)}
             autoComplete="off"
+            style={{ height: "45px" }}
           />
+          {/* Barcode Scan Focus Button (from Admin) */}
+          {barcodeScannerEnabled && (
+            <button
+              type="button"
+              className="btn btn-light border-start border-top border-bottom"
+              onClick={handleScannerFocus}
+              title="Focus for Scanner"
+              style={{
+                zIndex: 5,
+                background: "#f8fafc",
+                borderTopRightRadius: "0",
+                borderBottomRightRadius: "0",
+              }}
+            >
+              <i className="bi bi-qr-code-scan text-muted"></i>
+            </button>
+          )}
         </div>
         <button
           type="submit"
-          className="btn btn-primary px-4"
-          disabled={suggestions.length === 0}
+          className="btn btn-primary px-4 fw-bold d-flex align-iitems-center justify-content-center gap-1"
+          disabled={!searchQuery.trim()}
+          style={{ height: "50px" }}
         >
-          <i className="bi bi-search me-2"></i>
-          Search
+          <i className="bi bi-search me-2 mt-2"></i>
+          <span className="mt-2">Search</span>
         </button>
       </form>
 

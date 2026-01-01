@@ -11,6 +11,9 @@ import ProductSearch from "../../Components/Billing/ProductSearch";
 import CustomerSearch from "../../Components/Billing/CustomerSearch";
 import CustomerModal from "../../Components/Billing/CustomerModal";
 import { removeCache, CACHE_KEYS } from "../../utils/cacheUtils";
+import { useNavigate } from "react-router-dom";
+import ShortcutGuide from "../../Components/Navigation/ShortcutGuide";
+import { getDecrypted } from "../../utils/storage";
 
 const ProductBilling = () => {
   const {
@@ -20,10 +23,20 @@ const ProductBilling = () => {
     refreshCustomers,
     refreshProducts,
   } = useBilling();
-  const { user, accessToken } = useAuth();
+  const { user, accessToken, logout } = useAuth();
+  const navigate = useNavigate();
 
   const [dateTime, setDateTime] = useState(new Date());
   const searchInputRef = useRef(null);
+  const discountRefs = useRef({}); // To store refs for discount inputs
+  const [appSettings, setAppSettings] = useState(null);
+
+  useEffect(() => {
+    const saved = getDecrypted("app_settings");
+    if (saved) {
+      setAppSettings(saved);
+    }
+  }, []);
 
   // Customer State
   const [showCustomerModal, setShowCustomerModal] = useState(false);
@@ -38,29 +51,74 @@ const ProductBilling = () => {
 
   // Cart State
   const [cart, setCart] = useState([]);
+  const [removedItems, setRemovedItems] = useState([]); // Stack for Redo
+  const [showShortcutGuide, setShowShortcutGuide] = useState(false);
 
-  // Calculations
+  // Calculations (Dynamic Tax Handling)
   const cartWithTotals = cart.map((item) => {
-    const discountAmount = (item.price * item.discount) / 100;
-    const effectivePrice = Math.max(0, item.price - discountAmount);
-    const lineTotal = effectivePrice * item.qty;
-    const taxAmount = (lineTotal * item.gst) / 100;
-    return { ...item, effectivePrice, lineTotal, taxAmount, discountAmount };
+    const discountAmountPerUnit = (item.price * item.discount) / 100;
+    const effectivePrice = Math.max(0, item.price - discountAmountPerUnit);
+    const qty = item.qty;
+
+    let lineTotal, taxAmount, taxableValue;
+    const type = (item.gstType || "NotIncluded").toLowerCase();
+
+    if (type === "included") {
+      // Extraction: Tax is already inside the price (Total = MRP)
+      lineTotal = effectivePrice * qty;
+      taxAmount = (lineTotal * item.gst) / (100 + item.gst);
+      taxableValue = lineTotal - taxAmount;
+    } else if (type === "notincluded") {
+      // Addition: Tax is added on top of the price (Total = Base + Tax)
+      taxableValue = effectivePrice * qty;
+      taxAmount = (taxableValue * item.gst) / 100;
+      lineTotal = taxableValue + taxAmount;
+    } else {
+      // NotApplicable or others: No Tax
+      lineTotal = effectivePrice * qty;
+      taxableValue = lineTotal;
+      taxAmount = 0;
+    }
+
+    return {
+      ...item,
+      effectivePrice,
+      lineTotal,
+      taxAmount,
+      taxableValue,
+      discountAmount: discountAmountPerUnit * qty,
+    };
   });
 
-  const subtotal = cartWithTotals.reduce(
+  const rawGrandTotal = cartWithTotals.reduce(
     (acc, item) => acc + item.lineTotal,
     0
   );
+
+  // Apply Rounding Logic
+  let grandTotal = rawGrandTotal;
+  const roundingMethod = appSettings?.rounding || "none";
+  const roundingValue = appSettings?.roundingValue || 1;
+
+  if (roundingMethod === "round") {
+    grandTotal = Math.round(rawGrandTotal);
+  } else if (roundingMethod === "nearest") {
+    grandTotal = Math.round(rawGrandTotal / roundingValue) * roundingValue;
+  } else if (roundingMethod === "ceil") {
+    grandTotal = Math.ceil(rawGrandTotal);
+  } else if (roundingMethod === "floor") {
+    grandTotal = Math.floor(rawGrandTotal);
+  }
+
   const totalTax = cartWithTotals.reduce(
     (acc, item) => acc + item.taxAmount,
     0
   );
-  const grandTotal = subtotal + totalTax;
+  const subtotal = grandTotal - totalTax; // Base taxable amount (adjusted for rounding)
   const totalItems = cart.reduce((acc, item) => acc + item.qty, 0);
 
   const totalDiscount = cartWithTotals.reduce(
-    (acc, item) => acc + item.discountAmount * item.qty,
+    (acc, item) => acc + item.discountAmount,
     0
   );
 
@@ -85,6 +143,7 @@ const ProductBilling = () => {
       }
       return [...prev, { ...product, qty: 1, discount: 0 }];
     });
+    setRemovedItems([]); // Clear redo stack on new action
   };
 
   const setQty = (id, val) => {
@@ -113,7 +172,28 @@ const ProductBilling = () => {
   };
 
   const removeItem = (id) => {
-    setCart((prev) => prev.filter((item) => item._id !== id));
+    const itemToRemove = cart.find((item) => item._id === id);
+    if (itemToRemove) {
+      setRemovedItems((prev) => [...prev, itemToRemove]);
+      setCart((prev) => prev.filter((item) => item._id !== id));
+    }
+  };
+
+  const undoRemove = () => {
+    if (removedItems.length === 0) return toast.info("Nothing to redo!");
+    const lastRemoved = removedItems[removedItems.length - 1];
+    setCart((prev) => {
+      const existing = prev.find((item) => item._id === lastRemoved._id);
+      if (existing) {
+        return prev.map((item) =>
+          item._id === lastRemoved._id
+            ? { ...item, qty: item.qty + lastRemoved.qty }
+            : item
+        );
+      }
+      return [...prev, lastRemoved];
+    });
+    setRemovedItems((prev) => prev.slice(0, -1));
   };
 
   // Customer Functions
@@ -193,6 +273,12 @@ const ProductBilling = () => {
     }
 
     const selectedAccount = accounts.find((a) => a._id === selectedAccountId);
+    if (selectedAccount?.currentStatus === "Closed") {
+      return toast.error(
+        "This account is closed for today. Please use another account."
+      );
+    }
+
     if (selectedAccount?.type === "Credits" && !selectedCustomerId) {
       return toast.warning(
         "Please select/register a customer for Credit payments!"
@@ -204,23 +290,43 @@ const ProductBilling = () => {
       const saleData = {
         customer: selectedCustomerId,
         items: cart.map((item) => {
-          const discountAmount = (item.price * item.discount) / 100;
-          const effectivePrice = Math.max(0, item.price - discountAmount);
-          const lineTotal = effectivePrice * item.qty;
-          const taxAmount = (lineTotal * item.gst) / 100;
+          const discountAmountPerUnit = (item.price * item.discount) / 100;
+          const effectivePrice = Math.max(
+            0,
+            item.price - discountAmountPerUnit
+          );
+          const qty = item.qty;
+
+          let lineTotal, taxAmount, taxableValue;
+          const type = (item.gstType || "NotIncluded").toLowerCase();
+
+          if (type === "included") {
+            lineTotal = effectivePrice * qty;
+            taxAmount = (lineTotal * item.gst) / (100 + item.gst);
+            taxableValue = lineTotal - taxAmount;
+          } else if (type === "notincluded") {
+            taxableValue = effectivePrice * qty;
+            taxAmount = (taxableValue * item.gst) / 100;
+            lineTotal = taxableValue + taxAmount;
+          } else {
+            lineTotal = effectivePrice * qty;
+            taxableValue = lineTotal;
+            taxAmount = 0;
+          }
 
           return {
             product: item._id,
-            qty: item.qty,
+            qty: qty,
             price: item.price,
-            discount: discountAmount,
-            taxAmount: taxAmount,
-            lineTotal: lineTotal,
+            discount: Number((discountAmountPerUnit * qty).toFixed(2)),
+            taxAmount: Number(taxAmount.toFixed(2)),
+            lineTotal: Number(lineTotal.toFixed(2)),
+            taxableValue: Number(taxableValue.toFixed(2)),
           };
         }),
-        subtotal: subtotal,
-        totalTax: totalTax,
-        grandTotal: grandTotal,
+        subtotal: Number(subtotal.toFixed(2)),
+        totalTax: Number(totalTax.toFixed(2)),
+        grandTotal: Number(grandTotal.toFixed(2)),
         paymentMethod: selectedAccountId,
       };
 
@@ -261,6 +367,7 @@ const ProductBilling = () => {
 
   const clearTransaction = () => {
     setCart([]);
+    setRemovedItems([]);
     setSelectedCustomerId(null);
     setSelectedCustomerName("");
     setSelectedCustomerPhone("");
@@ -276,31 +383,99 @@ const ProductBilling = () => {
   // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e) => {
+      // F-Keys
       if (e.key === "F1") {
         e.preventDefault();
         setShowCustomerModal(true);
-      }
-      if (e.key === "F2") {
+      } else if (e.key === "F2") {
         e.preventDefault();
         searchInputRef.current?.focus();
-      }
-      if (e.key === "F4") {
+      } else if (e.key === "F4") {
         e.preventDefault();
         clearTransaction();
+      } else if (e.key === "F6") {
+        e.preventDefault();
+        searchInputRef.current?.focus();
+      } else if (e.key === "F8") {
+        e.preventDefault();
+        if (cart.length > 0) {
+          const lastItem = cart[cart.length - 1];
+          discountRefs.current[lastItem._id]?.focus();
+        }
+      } else if (e.key === "F9") {
+        e.preventDefault();
+        handlePayment(false);
+      } else if (e.key === "F10") {
+        e.preventDefault();
+        handlePayment(true);
+      } else if (e.key === "F11") {
+        e.preventDefault();
+        navigate("/reports");
+      } else if (e.key === "F12") {
+        e.preventDefault();
+        setShowShortcutGuide((prev) => !prev);
       }
-      if (e.key === "F9") {
+
+      // Combo Keys
+      if (e.ctrlKey && e.key === "Enter") {
         e.preventDefault();
         handlePayment(false);
       }
-      if (e.key === "F10") {
+      if (e.key === "Escape") {
+        setShowCustomerModal(false);
+        setShowShortcutGuide(false);
+      }
+      if (e.ctrlKey && e.key === "z") {
         e.preventDefault();
-        handlePayment(true);
+        if (cart.length > 0) {
+          removeItem(cart[cart.length - 1]._id);
+        }
+      }
+      if (e.ctrlKey && e.key === "y") {
+        e.preventDefault();
+        undoRemove();
+      }
+      if (e.altKey && e.key === "s") {
+        e.preventDefault();
+        navigate("/settings");
+      }
+      if (e.altKey && e.key === "l") {
+        e.preventDefault();
+        logout();
+      }
+      if (e.ctrlKey && e.key === "f") {
+        e.preventDefault();
+        navigate("/product-catalog");
+      }
+
+      // --- Global Barcode Scanner Listener ---
+      // Only runs if scanner is enabled in settings
+      if (appSettings?.barcodeScanner) {
+        const isInputFocused = ["INPUT", "TEXTAREA", "SELECT"].includes(
+          document.activeElement.tagName
+        );
+
+        // If search bar is NOT focused and user starts "typing" alphanumeric characters
+        if (!isInputFocused && /^[a-zA-Z0-9]$/.test(e.key)) {
+          searchInputRef.current?.focus();
+          // The first character is already lost from the input value if we just focus,
+          // so we can either wait for a library or manually handle the buffer.
+          // For simplicity, we just focus and the scanner usually types the rest fast enough.
+        }
       }
     };
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [cart, grandTotal, selectedAccountId, selectedCustomerId]);
+  }, [
+    cart,
+    removedItems,
+    grandTotal,
+    selectedAccountId,
+    selectedCustomerId,
+    logout,
+    navigate,
+  ]);
 
   if (billingLoading && allProducts.length === 0) {
     return <LoadingPage />;
@@ -377,49 +552,26 @@ const ProductBilling = () => {
             </span>
             <div className="d-flex gap-3">
               <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd
-                  className="bg-secondary text-white fw-normal me-1"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  F1
-                </kbd>
-                New Customer
+                <kbd className="bg-secondary text-white fw-normal me-1">F1</kbd>
+                New Cust
               </small>
               <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd
-                  className="bg-secondary text-white fw-normal me-1"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  F2
-                </kbd>
+                <kbd className="bg-secondary text-white fw-normal me-1">F2</kbd>
                 Search
               </small>
               <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd
-                  className="bg-secondary text-white fw-normal me-1"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  F4
-                </kbd>
-                Clear
-              </small>
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd
-                  className="bg-secondary text-white fw-normal me-1"
-                  style={{ fontSize: "0.7rem" }}
-                >
-                  F9
-                </kbd>
+                <kbd className="bg-secondary text-white fw-normal me-1">F9</kbd>
                 Save
               </small>
               <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd
-                  className="bg-secondary text-white fw-normal me-1"
-                  style={{ fontSize: "0.7rem" }}
-                >
+                <kbd className="bg-secondary text-white fw-normal me-1">
                   F10
                 </kbd>
                 Print
+              </small>
+              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
+                <kbd className="bg-info text-white fw-normal me-1">F12</kbd>
+                Help
               </small>
             </div>
           </div>
@@ -539,6 +691,7 @@ const ProductBilling = () => {
                     products={allProducts}
                     onAddToCart={addToCart}
                     searchInputRef={searchInputRef}
+                    barcodeScannerEnabled={appSettings?.barcodeScanner}
                   />
                 </div>
 
@@ -556,6 +709,8 @@ const ProductBilling = () => {
                         >
                           #
                         </th>
+                        <th style={{ width: "20%" }}>ITEMCODE</th>
+
                         <th style={{ width: "30%" }}>Description</th>
                         <th style={{ width: "8%" }} className="text-center">
                           GST%
@@ -604,6 +759,9 @@ const ProductBilling = () => {
                             <td className="text-center small ps-3 text-muted">
                               {idx + 1}
                             </td>
+                            <td className="fw-bold small text-dark">
+                              <span className="text-muted">{item.sku}</span>
+                            </td>
                             <td>
                               <div className="fw-bold small text-dark">
                                 {item.name}
@@ -612,7 +770,7 @@ const ProductBilling = () => {
                                 className="d-flex gap-2 align-items-center"
                                 style={{ fontSize: "0.7rem" }}
                               >
-                                <span className="text-muted">#{item.sku}</span>
+                                {/* <span className="text-muted">#{item.sku}</span> */}
                                 <span
                                   className={`badge ${
                                     item.availableQty <=
@@ -627,9 +785,19 @@ const ProductBilling = () => {
                               </div>
                             </td>
                             <td className="text-center">
-                              <span className="badge bg-light text-dark border small fw-normal">
-                                {item.gst}%
-                              </span>
+                              <div className="d-flex flex-column align-items-center">
+                                <span className="badge bg-light text-dark border small fw-normal">
+                                  {item.gst}%
+                                </span>
+                                <small
+                                  className="text-muted"
+                                  style={{ fontSize: "0.6rem" }}
+                                >
+                                  {item.gstType === "Included"
+                                    ? "Incl."
+                                    : "Excl."}
+                                </small>
+                              </div>
                             </td>
                             <td className="text-end small">₹{item.price}</td>
                             <td>
@@ -653,6 +821,9 @@ const ProductBilling = () => {
                                   type="number"
                                   className="form-control text-end small border-0 bg-light pe-1"
                                   value={item.discount}
+                                  ref={(el) =>
+                                    (discountRefs.current[item._id] = el)
+                                  }
                                   onChange={(e) =>
                                     updateDiscount(item._id, e.target.value)
                                   }
@@ -755,7 +926,9 @@ const ProductBilling = () => {
                             : "btn-outline-primary"
                         }`}
                         onClick={() => setSelectedAccountId(acc._id)}
-                        disabled={isProcessing}
+                        disabled={
+                          isProcessing || acc.currentStatus === "Closed"
+                        }
                         style={{ minWidth: "100px", borderRadius: "8px" }}
                       >
                         <i
@@ -763,12 +936,13 @@ const ProductBilling = () => {
                             acc.type === "Cash"
                               ? "bi-cash-stack"
                               : acc.type === "Upi"
-                              ? "bi-phone"
+                              ? "bi-qr-code"
                               : "bi-credit-card"
                           }`}
                         ></i>
                         <span className="small fw-500">
                           {acc.type === "Upi" ? acc.upiAccountName : acc.type}
+                          {acc.currentStatus === "Closed" && " (Closed)"}
                         </span>
                       </button>
                     ))}
@@ -786,16 +960,6 @@ const ProductBilling = () => {
                           ?.currentBalance?.toFixed(2) || "0.00"}
                       </small>
                     </div>
-                    {/* <div className="d-flex justify-content-between">
-                      <small className="text-muted">Post-Transaction:</small>
-                      <small className="fw-bold text-success">
-                        ₹
-                        {(
-                          (accounts.find((a) => a._id === selectedAccountId)
-                            ?.currentBalance || 0) + grandTotal
-                        ).toFixed(2)}
-                      </small>
-                    </div> */}
                   </div>
                 )}
 
@@ -860,6 +1024,12 @@ const ProductBilling = () => {
           </div>
         </div>
       </div>
+
+      {/* Shortcut Guide Modal */}
+      <ShortcutGuide
+        isOpen={showShortcutGuide}
+        onClose={() => setShowShortcutGuide(false)}
+      />
     </div>
   );
 };

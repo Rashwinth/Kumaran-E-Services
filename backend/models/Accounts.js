@@ -3,8 +3,13 @@ const { Schema } = mongoose;
 
 const balanceSchema = new Schema({
   date: { type: Date, required: true, default: Date.now },
+  dateStr: { type: String, required: true }, // YYYY-MM-DD
   openingBalance: { type: Number, required: true, default: 0 },
-  closingBalance: { type: Number, required: true, default: 0 },
+  expectedClosingBalance: { type: Number, required: true, default: 0 },
+  closingBalance: { type: Number, default: 0 },
+  openingTime: { type: Date, default: Date.now },
+  closingTime: { type: Date },
+  isClosed: { type: Boolean, default: false },
 });
 
 const accountSchema = new Schema(
@@ -31,13 +36,37 @@ const accountSchema = new Schema(
       type: Number,
       default: 0,
     },
+    currentStatus: {
+      type: String,
+      enum: ["Open", "Closed"],
+      default: "Open",
+    },
     status: {
       type: String,
-      enum: ["Active", "Inactive", "Closed"],
+      enum: ["Active", "Inactive", "Deleted"],
       default: "Active",
     },
   },
   { timestamps: true }
 );
+
+// Pre-validate hook to fix legacy data and ensure dateStr is present
+accountSchema.pre("validate", function () {
+  if (this.balanceHistory && this.balanceHistory.length > 0) {
+    this.balanceHistory.forEach((entry) => {
+      // Ensure dateStr is present (required by schema)
+      if (!entry.dateStr) {
+        entry.dateStr = new Date(entry.date || Date.now())
+          .toISOString()
+          .split("T")[0];
+      }
+      // Ensure expectedClosingBalance is present
+      if (entry.expectedClosingBalance === undefined) {
+        entry.expectedClosingBalance =
+          entry.closingBalance || entry.openingBalance || 0;
+      }
+    });
+  }
+});
 
 module.exports = mongoose.model("accounts", accountSchema);

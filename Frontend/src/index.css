@@ -146,6 +146,7 @@ button {
     0 10px 10px -5px rgba(0, 0, 0, 0.04) !important;
   font-family: var(--font-sans) !important;
   margin-bottom: 12px !important;
+  color: #ffffff !important;
 }
 
 .Toastify__toast-body {

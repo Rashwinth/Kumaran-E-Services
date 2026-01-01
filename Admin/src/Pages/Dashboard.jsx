@@ -320,9 +320,8 @@ const Dashboard = () => {
                     </h6>
                     <div
                       style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(4, 1fr)",
-                        gap: "15px",
+                        display: "flex",
+                        gap: "10px",
                       }}
                     >
                       <Link
@@ -331,10 +330,14 @@ const Dashboard = () => {
                         style={{
                           textDecoration: "none",
                           justifyContent: "center",
+                          flex: "1",
+                          minWidth: 0,
+                          flexDirection: "column",
+                          padding: "0.75rem 0.5rem",
                         }}
                       >
-                        <i className="bi bi-bank2 fs-4 mb-2 text-primary"></i>
-                        <span>Accounts</span>
+                        <i className="bi bi-bank2 fs-5 mb-2 text-primary"></i>
+                        <span style={{ fontSize: "0.85rem" }}>Accounts</span>
                       </Link>
                       <Link
                         to={`/branch/${branch._id}/products`}
@@ -342,10 +345,14 @@ const Dashboard = () => {
                         style={{
                           textDecoration: "none",
                           justifyContent: "center",
+                          flex: "1",
+                          minWidth: 0,
+                          flexDirection: "column",
+                          padding: "0.75rem 0.5rem",
                         }}
                       >
-                        <i className="bi bi-box-seam fs-4 mb-2 text-success"></i>
-                        <span>Products</span>
+                        <i className="bi bi-box-seam fs-5 mb-2 text-success"></i>
+                        <span style={{ fontSize: "0.85rem" }}>Products</span>
                       </Link>
                       <Link
                         to={`/branch/${branch._id}/employee`}
@@ -353,10 +360,14 @@ const Dashboard = () => {
                         style={{
                           textDecoration: "none",
                           justifyContent: "center",
+                          flex: "1",
+                          minWidth: 0,
+                          flexDirection: "column",
+                          padding: "0.75rem 0.5rem",
                         }}
                       >
-                        <i className="bi bi-people fs-4 mb-2 text-info"></i>
-                        <span>Employees</span>
+                        <i className="bi bi-people fs-5 mb-2 text-info"></i>
+                        <span style={{ fontSize: "0.85rem" }}>Employees</span>
                       </Link>
                       <Link
                         to={`/branch/${branch._id}/reports`}
@@ -364,10 +375,14 @@ const Dashboard = () => {
                         style={{
                           textDecoration: "none",
                           justifyContent: "center",
+                          flex: "1",
+                          minWidth: 0,
+                          flexDirection: "column",
+                          padding: "0.75rem 0.5rem",
                         }}
                       >
-                        <i className="bi bi-file-bar-graph fs-4 mb-2 text-warning"></i>
-                        <span>Reports</span>
+                        <i className="bi bi-file-bar-graph fs-5 mb-2 text-warning"></i>
+                        <span style={{ fontSize: "0.85rem" }}>Reports</span>
                       </Link>
                     </div>
                   </div>

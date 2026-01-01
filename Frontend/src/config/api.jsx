@@ -11,6 +11,8 @@ export const API_ENDPOINTS = {
   },
   SALES: `${API_BASE}/api/staff`,
   BRANCH_ACCOUNTS: `${API_BASE}/api/staff/accounts/my-branch`,
+  CLOSE_ACCOUNT: (id) => `${API_BASE}/api/staff/accounts/${id}/close`,
+
   BRANCH_INVENTORY: `${API_BASE}/api/staff/inventory/my-branch`,
   CUSTOMERS: `${API_BASE}/api/staff/customers`,
   CUSTOMER_SEARCH: `${API_BASE}/api/staff/customers/search`,

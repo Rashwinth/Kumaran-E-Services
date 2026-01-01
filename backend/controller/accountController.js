@@ -6,10 +6,34 @@ const Account = require("../models/Accounts");
 exports.getAllAccounts = async (req, res) => {
   try {
     const accounts = await Account.find().populate("branch", "name code");
+
+    // Auto-open daily sessions if they don't exist
+    const todayStr = new Date().toISOString().split("T")[0];
+    const updatePromises = accounts.map(async (account) => {
+      const dailySession = account.balanceHistory.find(
+        (h) => h.dateStr === todayStr
+      );
+
+      if (!dailySession) {
+        account.balanceHistory.push({
+          date: new Date(),
+          dateStr: todayStr,
+          openingBalance: account.currentBalance,
+          expectedClosingBalance: account.currentBalance,
+          isClosed: false,
+        });
+        account.currentStatus = "Open";
+        return await account.save();
+      }
+      return account;
+    });
+
+    const refreshedAccounts = await Promise.all(updatePromises);
+
     res.status(200).json({
       success: true,
-      count: accounts.length,
-      data: accounts,
+      count: refreshedAccounts.length,
+      data: refreshedAccounts,
     });
   } catch (error) {
     console.error("Get accounts error:", error);
@@ -25,16 +49,40 @@ exports.getAllAccounts = async (req, res) => {
 // @access  Private (Admin/Manager)
 exports.getAccountsByBranch = async (req, res) => {
   try {
+
     const { branchId } = req.params;
     const accounts = await Account.find({ branch: branchId }).populate(
       "branch",
       "name code"
     );
 
+    // Auto-open daily sessions if they don't exist
+    const todayStr = new Date().toISOString().split("T")[0];
+    const updatePromises = accounts.map(async (account) => {
+      const dailySession = account.balanceHistory.find(
+        (h) => h.dateStr === todayStr
+      );
+
+      if (!dailySession) {
+        account.balanceHistory.push({
+          date: new Date(),
+          dateStr: todayStr,
+          openingBalance: account.currentBalance,
+          expectedClosingBalance: account.currentBalance,
+          isClosed: false,
+        });
+        account.currentStatus = "Open";
+        return await account.save();
+      }
+      return account;
+    });
+
+    const refreshedAccounts = await Promise.all(updatePromises);
+
     res.status(200).json({
       success: true,
-      count: accounts.length,
-      data: accounts,
+      count: refreshedAccounts.length,
+      data: refreshedAccounts,
     });
   } catch (error) {
     console.error("Get branch accounts error:", error);
@@ -50,7 +98,8 @@ exports.getAccountsByBranch = async (req, res) => {
 // @access  Private (Admin/Manager)
 exports.getAccountById = async (req, res) => {
   try {
-    const account = await Account.findById(req.params.id).populate(
+    
+    let account = await Account.findById(req.params.id).populate(
       "branch",
       "name code"
     );
@@ -60,6 +109,30 @@ exports.getAccountById = async (req, res) => {
         message: "Account not found",
       });
     }
+
+    // Auto-open daily session if it doesn't exist
+    const todayStr = new Date().toISOString().split("T")[0];
+    const dailySession = account.balanceHistory.find(
+      (h) => h.dateStr === todayStr
+    );
+
+    if (!dailySession) {
+      account.balanceHistory.push({
+        date: new Date(),
+        dateStr: todayStr,
+        openingBalance: account.currentBalance,
+        expectedClosingBalance: account.currentBalance,
+        isClosed: false,
+      });
+      account.currentStatus = "Open";
+      account = await account.save();
+      // Refetch to ensure populated data is intact or re-populate
+      account = await Account.findById(account._id).populate(
+        "branch",
+        "name code"
+      );
+    }
+
     res.status(200).json({
       success: true,
       data: account,
@@ -103,11 +176,22 @@ exports.createAccount = async (req, res) => {
       type,
       upiAccountName: type === "Upi" ? upiAccountName : undefined,
       branch,
-      balanceHistory: balanceHistory || [],
+      balanceHistory:
+        balanceHistory && balanceHistory.length > 0
+          ? balanceHistory.map((h) => ({
+              ...h,
+              dateStr:
+                h.dateStr ||
+                new Date(h.date || Date.now()).toISOString().split("T")[0],
+              expectedClosingBalance:
+                h.expectedClosingBalance || h.closingBalance || 0,
+            }))
+          : [],
       currentBalance:
         balanceHistory && balanceHistory.length > 0
           ? balanceHistory[balanceHistory.length - 1].closingBalance
           : 0,
+      currentStatus: "Open",
       status: status || "Active",
     });
 
@@ -306,10 +390,33 @@ exports.getMyBranchAccounts = async (req, res) => {
       status: "Active",
     });
 
+    // Auto-open daily sessions if they don't exist
+    const todayStr = new Date().toISOString().split("T")[0];
+    const updatePromises = accounts.map(async (account) => {
+      const dailySession = account.balanceHistory.find(
+        (h) => h.dateStr === todayStr
+      );
+
+      if (!dailySession) {
+        account.balanceHistory.push({
+          date: new Date(),
+          dateStr: todayStr,
+          openingBalance: account.currentBalance,
+          expectedClosingBalance: account.currentBalance,
+          isClosed: false,
+        });
+        account.currentStatus = "Open";
+        return await account.save();
+      }
+      return account;
+    });
+
+    const refreshedAccounts = await Promise.all(updatePromises);
+
     res.status(200).json({
       success: true,
-      count: accounts.length,
-      data: accounts,
+      count: refreshedAccounts.length,
+      data: refreshedAccounts,
     });
   } catch (error) {
     console.error("Get my branch accounts error:", error);
@@ -318,4 +425,95 @@ exports.getMyBranchAccounts = async (req, res) => {
       message: "Server error while fetching branch accounts",
     });
   }
+};
+
+// @desc    Close account for the day
+// @route   POST /admin/accounts/:id/close
+// @access  Private (Admin/Staff)
+exports.closeAccount = async (req, res) => {
+  try {
+    const { closingBalance } = req.body;
+    const account = await Account.findById(req.params.id);
+
+    if (!account) {
+      return res
+        .status(404)
+        .json({ success: false, message: "Account not found" });
+    }
+
+    // Fix legacy balance history entries that don't have dateStr
+    account.balanceHistory.forEach((entry) => {
+      if (!entry.dateStr && entry.date) {
+        entry.dateStr = new Date(entry.date).toISOString().split("T")[0];
+      }
+      if (entry.expectedClosingBalance === undefined) {
+        entry.expectedClosingBalance =
+          entry.closingBalance || entry.openingBalance || 0;
+      }
+    });
+
+    const todayStr = new Date().toISOString().split("T")[0];
+    let session = account.balanceHistory.find((h) => h.dateStr === todayStr);
+
+    if (!session) {
+      // If no session for today, create one just to close it
+      account.balanceHistory.push({
+        date: new Date(),
+        dateStr: todayStr,
+        openingBalance: account.currentBalance,
+        expectedClosingBalance: account.currentBalance,
+        isClosed: false,
+      });
+      session = account.balanceHistory[account.balanceHistory.length - 1];
+    }
+
+    if (session.isClosed) {
+      return res
+        .status(400)
+        .json({ success: false, message: "Account already closed for today" });
+    }
+
+    session.closingBalance = closingBalance;
+    session.closingTime = new Date();
+    session.isClosed = true;
+    account.currentStatus = "Closed";
+    account.currentBalance = closingBalance; // Update to actual physical balance
+
+    await account.save();
+
+    res.status(200).json({
+      success: true,
+      message: "Account closed successfully",
+      data: account,
+    });
+  } catch (error) {
+    console.error("Close account error:", error);
+    res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+// Internal Helper to ensure daily session is open
+exports.ensureDailySession = async (accountId, session = null) => {
+  const Account = require("../models/Accounts"); // Ensure model is available
+  const account = await Account.findById(accountId).session(session);
+  if (!account) return null;
+
+  const todayStr = new Date().toISOString().split("T")[0];
+  let dailySession = account.balanceHistory.find((h) => h.dateStr === todayStr);
+
+  if (!dailySession) {
+    // Auto-open new session
+    account.balanceHistory.push({
+      date: new Date(),
+      dateStr: todayStr,
+      openingBalance: account.currentBalance,
+      expectedClosingBalance: account.currentBalance,
+      isClosed: false,
+    });
+    account.currentStatus = "Open";
+    await account.save({ session });
+    dailySession = account.balanceHistory[account.balanceHistory.length - 1];
+  }
+
+  return { account, dailySession };
 };

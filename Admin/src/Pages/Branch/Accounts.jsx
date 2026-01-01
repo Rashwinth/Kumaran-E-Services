@@ -8,8 +8,6 @@ const AccountManagement = () => {
   const navigate = useNavigate();
   const { accounts, getAccounts, loading } = useAccount();
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterType, setFilterType] = useState("All"); // All, Upi, Cash
-
   useEffect(() => {
     getAccounts();
   }, [getAccounts]);
@@ -28,24 +26,32 @@ const AccountManagement = () => {
       branch.code.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
-  const getLatestBalance = (balanceHistory) => {
-    if (!balanceHistory || balanceHistory.length === 0) return 0;
-    const latest = [...balanceHistory].sort(
-      (a, b) => new Date(b.date) - new Date(a.date)
-    )[0];
-    return latest?.closingBalance || 0;
-  };
+  // Get unique UPI account names across all branches to create columns
+  const upiAccountNames = Array.from(
+    new Set(
+      accounts
+        .filter((acc) => acc.type === "Upi" && acc.upiAccountName)
+        .map((acc) => acc.upiAccountName)
+    )
+  ).sort();
 
   const calculateTotalByType = (branchAccounts, type) => {
     return branchAccounts
       .filter((acc) => acc.type === type)
-      .reduce((sum, acc) => sum + getLatestBalance(acc.balanceHistory), 0);
+      .reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
   };
 
-  // Safe safely calculates total for a branch
+  const getUpiBalanceByName = (branchAccounts, name) => {
+    const acc = branchAccounts.find(
+      (a) => a.type === "Upi" && a.upiAccountName === name
+    );
+    return acc ? acc.currentBalance || 0 : 0;
+  };
+
+  // Safely calculates total for a branch
   const calculateBranchTotal = (branchAccounts) => {
     return branchAccounts.reduce(
-      (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
+      (sum, acc) => sum + (acc.currentBalance || 0),
       0
     );
   };
@@ -60,15 +66,15 @@ const AccountManagement = () => {
 
   // Global Stats
   const globalTotal = accounts.reduce(
-    (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
+    (sum, acc) => sum + (acc.currentBalance || 0),
     0
   );
   const globalUpi = accounts
     .filter((a) => a.type === "Upi")
-    .reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
+    .reduce((sum, a) => sum + (a.currentBalance || 0), 0);
   const globalCash = accounts
     .filter((a) => a.type === "Cash")
-    .reduce((sum, a) => sum + getLatestBalance(a.balanceHistory), 0);
+    .reduce((sum, a) => sum + (a.currentBalance || 0), 0);
 
   // --- Handlers ---
   const handleRowClick = (branchId) => {
@@ -124,26 +130,23 @@ const AccountManagement = () => {
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
-
-        <div className="filter-tabs">
-          {["All", "Upi", "Cash"].map((type) => (
-            <button
-              key={type}
-              className={`filter-tab ${filterType === type ? "active" : ""}`}
-              onClick={() => setFilterType(type)}
-            >
-              {type === "All" ? "All Accounts" : type}
-            </button>
-          ))}
-        </div>
       </div>
 
       {/* 3. High-Density List View */}
       <div className="accounts-list-container">
         {/* Table Header */}
-        <div className="list-header">
+        <div
+          className="list-header"
+          style={{
+            gridTemplateColumns: `2fr repeat(${upiAccountNames.length}, 1fr) 1fr 1fr 1.5fr 0.5fr`,
+          }}
+        >
           <div className="col-branch">Branch</div>
-          <div className="col-stat">UPI</div>
+          {upiAccountNames.map((name) => (
+            <div key={name} className="col-stat">
+              {name}
+            </div>
+          ))}
           <div className="col-stat">Cash</div>
           <div className="col-stat">Credits</div>
           <div className="col-total">Total Balance</div>
@@ -155,19 +158,17 @@ const AccountManagement = () => {
             const branchAccounts = accounts.filter(
               (acc) => acc.branch._id === branch._id
             );
-            const upiBal = calculateTotalByType(branchAccounts, "Upi");
             const cashBal = calculateTotalByType(branchAccounts, "Cash");
             const creditBal = calculateTotalByType(branchAccounts, "Credits");
             const totalBal = calculateBranchTotal(branchAccounts);
-
-            // Filter logic
-            if (filterType === "Upi" && upiBal === 0) return null;
-            if (filterType === "Cash" && cashBal === 0) return null;
 
             return (
               <div
                 key={branch._id}
                 className="list-row"
+                style={{
+                  gridTemplateColumns: `2fr repeat(${upiAccountNames.length}, 1fr) 1fr 1fr 1.5fr 0.5fr`,
+                }}
                 onClick={() => handleRowClick(branch._id)}
               >
                 <div className="col-branch">
@@ -178,15 +179,20 @@ const AccountManagement = () => {
                   </div>
                 </div>
 
-                <div className="col-stat" data-label="UPI">
-                  <span
-                    className={`balance-pill ${
-                      upiBal > 0 ? "pill-upi" : "pill-empty"
-                    }`}
-                  >
-                    {formatCurrency(upiBal)}
-                  </span>
-                </div>
+                {upiAccountNames.map((name) => {
+                  const bal = getUpiBalanceByName(branchAccounts, name);
+                  return (
+                    <div key={name} className="col-stat" data-label={name}>
+                      <span
+                        className={`balance-pill ${
+                          bal > 0 ? "pill-upi" : "pill-empty"
+                        }`}
+                      >
+                        {bal > 0 ? formatCurrency(bal) : ""}
+                      </span>
+                    </div>
+                  );
+                })}
 
                 <div className="col-stat" data-label="Cash">
                   <span
@@ -194,7 +200,7 @@ const AccountManagement = () => {
                       cashBal > 0 ? "pill-cash" : "pill-empty"
                     }`}
                   >
-                    {formatCurrency(cashBal)}
+                    {cashBal > 0 ? formatCurrency(cashBal) : ""}
                   </span>
                 </div>
 
@@ -204,7 +210,7 @@ const AccountManagement = () => {
                       creditBal > 0 ? "pill-credit" : "pill-empty"
                     }`}
                   >
-                    {formatCurrency(creditBal)}
+                    {creditBal > 0 ? formatCurrency(creditBal) : ""}
                   </span>
                 </div>
 

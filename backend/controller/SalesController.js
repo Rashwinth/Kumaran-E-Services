@@ -12,6 +12,7 @@ exports.createSale = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
+
     const {
       customer, // Customer ID (Optional for walk-ins, we handle it)
       items,
@@ -124,17 +125,27 @@ exports.createSale = async (req, res) => {
       { upsert: true, new: true, session }
     );
 
-    // 4. Update Account Balance
-    const openingBalance = account.currentBalance || 0;
-    const closingBalance = openingBalance + grandTotal;
+    // 4. Update Account Balance & Daily Session
+    const { ensureDailySession } = require("./accountController");
+    const sessionDetail = await ensureDailySession(paymentMethod, session);
 
-    account.balanceHistory.push({
-      date: new Date(),
-      openingBalance,
-      closingBalance,
-    });
-    account.currentBalance = closingBalance;
-    await account.save({ session });
+    if (!sessionDetail) {
+      throw new Error("Failed to resolve account session");
+    }
+
+    const { account: updatedAccount, dailySession } = sessionDetail;
+
+    if (dailySession.isClosed) {
+      throw new Error(
+        "This account is closed for today. Please re-open or use another account."
+      );
+    }
+
+    // Update balances
+    updatedAccount.currentBalance += grandTotal;
+    dailySession.expectedClosingBalance += grandTotal;
+
+    await updatedAccount.save({ session });
 
     // 5. Update Inventory and validate stock
     for (const item of items) {
@@ -158,27 +169,14 @@ exports.createSale = async (req, res) => {
         );
       }
 
-      // Update inventory quantity
+      // Update inventory quantity using standard $inc to avoid pipeline error
       const inventoryUpdate = await Inventory.findOneAndUpdate(
         {
           product: item.product,
           branch: branch._id,
           quantity: { $gte: item.qty },
         },
-        [
-          {
-            $set: {
-              quantity: { $subtract: ["$quantity", item.qty] },
-              isActive: {
-                $cond: {
-                  if: { $eq: [{ $subtract: ["$quantity", item.qty] }, 0] },
-                  then: false,
-                  else: "$isActive",
-                },
-              },
-            },
-          },
-        ],
+        { $inc: { quantity: -item.qty } },
         { session, new: true }
       );
 
@@ -186,6 +184,12 @@ exports.createSale = async (req, res) => {
         throw new Error(
           `Failed to update inventory for ${currentInventory.product.name}`
         );
+      }
+
+      // If quantity becomes 0, mark as inactive
+      if (inventoryUpdate.quantity === 0) {
+        inventoryUpdate.isActive = false;
+        await inventoryUpdate.save({ session });
       }
     }
 

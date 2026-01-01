@@ -3,6 +3,7 @@ import React from "react";
 const SettingsSidebar = ({ activeTab, setActiveTab }) => {
   const tabs = [
     { id: "general", icon: "bi-gear", label: "General" },
+    { id: "accounts", icon: "bi-wallet2", label: "Accounts" },
     { id: "hardware", icon: "bi-printer", label: "Hardware & POS" },
     { id: "sync", icon: "bi-arrow-repeat", label: "Data & Sync" },
     { id: "about", icon: "bi-info-circle", label: "About" },

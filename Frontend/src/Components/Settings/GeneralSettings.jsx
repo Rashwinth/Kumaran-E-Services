@@ -52,6 +52,47 @@ const GeneralSettings = ({ branchInfo, settings, handleChange }) => {
             <option>YYYY-MM-DD</option>
           </select>
         </div>
+
+        <div className="setting-row">
+          <div className="setting-info">
+            <h4>Rounding Method</h4>
+            <p>How total amounts are calculated (Rounding)</p>
+          </div>
+          <select
+            className="settings-select"
+            value={settings.rounding}
+            onChange={(e) => handleChange("rounding", e.target.value)}
+          >
+            <option value="none">None (2 Decimals)</option>
+            <option value="round">Nearest Integer (1)</option>
+            <option value="nearest">Nearest Multiple</option>
+            <option value="ceil">Round Up (Ceil)</option>
+            <option value="floor">Round Down (Floor)</option>
+          </select>
+        </div>
+
+        {settings.rounding === "nearest" && (
+          <div className="setting-row">
+            <div className="setting-info">
+              <h4>Rounding Multiple</h4>
+              <p>Value to round to (e.g., 5 or 10)</p>
+            </div>
+            <input
+              type="number"
+              className="settings-input"
+              style={{
+                width: "120px",
+                padding: "8px",
+                borderRadius: "6px",
+                border: "1px solid #ddd",
+              }}
+              value={settings.roundingValue || 10}
+              onChange={(e) =>
+                handleChange("roundingValue", parseInt(e.target.value) || 1)
+              }
+            />
+          </div>
+        )}
       </div>
     </div>
   );

@@ -24,6 +24,11 @@ router.get("/inventory/my-branch", protect, getInventoryByBranchStaff);
 
 // Account routes for staff
 router.get("/accounts/my-branch", protect, getMyBranchAccounts);
+router.post(
+  "/accounts/:id/close",
+  protect,
+  require("../controller/accountController").closeAccount
+);
 
 // Customer routes for staff
 router.get("/customers/my-branch", protect, getMyBranchCustomers);

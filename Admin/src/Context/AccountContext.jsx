@@ -62,6 +62,8 @@ export const AccountProvider = ({ children }) => {
           // BranchContext sets global state. Assuming BranchAccountDetail uses local state or global?
           // Let's set global accounts state to this branch's accounts since we are "viewing" them.
           setAccounts(response.data.data);
+          console.log(response.data.data);
+          
           return response.data.data;
         }
       } catch (error) {

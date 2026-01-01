@@ -129,102 +129,40 @@ const ProductsCatalog = () => {
             );
 
             return (
-              <div
-                key={item._id}
-                className="product-card"
-                style={{ cursor: "pointer" }}
-              >
+              <div key={item._id} className="product-card">
                 <div className="product-info">
-                  <div
-                    className="product-name-row"
-                    style={{
-                      display: "flex",
-                      justifyContent: "space-between",
-                      alignItems: "center",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    <h3 style={{ margin: 0 }}>{product.name}</h3>
+                  <div className="product-header">
+                    <h3>{product.name}</h3>
                     <span
                       className={`status-badge ${
                         item.isActive ? "active" : "inactive"
                       }`}
-                      style={{
-                        marginTop: 0,
-                        fontSize: "0.65rem",
-                        padding: "0.15rem 0.5rem",
-                      }}
                     >
                       {item.isActive ? "Active" : "Inactive"}
                     </span>
                   </div>
 
-                  <div
-                    style={{
-                      fontSize: "0.85rem",
-                      color: "#4a5568",
-                      marginBottom: "0.5rem",
-                    }}
-                  >
-                    {/* <span style={{ fontWeight: "bold" }}>{product.sku}</span>
-                    {(product.brand || product.model) && (
-                      <span style={{ marginLeft: "8px" }}>
-                        {product.brand && `${product.brand}`}
-                        {product.brand && product.model && " | "}
-                        {product.model && `${product.model}`}
-                      </span>
-                    )} */}
+                  <div className="product-meta">
+                    {/* Placeholder for future SKU/Brand info if needed */}
                   </div>
 
-                  {/* <p className="product-category">
-                    {product.category?.name ||
-                      categories.find((c) => c._id === product.category)
-                        ?.name ||
-                      "Uncategorized"}
-                  </p> */}
-
-                  {product.compatibleModels &&
-                    product.compatibleModels.length > 0 && (
-                      <div
-                        className="compatible-models"
-                        style={{ marginBottom: "0.75rem" }}
-                      >
-                        <p
-                          style={{
-                            fontSize: "0.7rem",
-                            color: "#64748b",
-                            margin: "0 0 0.25rem 0",
-                            fontWeight: "600",
-                            textTransform: "uppercase",
-                          }}
-                        >
-                          Compatible With:
-                        </p>
-                        <div
-                          style={{
-                            display: "flex",
-                            flexWrap: "wrap",
-                            gap: "4px",
-                          }}
-                        >
-                          {product.compatibleModels.map((model, idx) => (
-                            <span
-                              key={idx}
-                              style={{
-                                fontSize: "1rem",
-                                background: "#f1f5f9",
-                                color: "#475569",
-                                padding: "2px 8px",
-                                borderRadius: "4px",
-                                border: "1px solid #e2e8f0",
-                              }}
-                            >
-                              {model}
-                            </span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                  <div className="compatible-section">
+                    <p className="compatible-label">Compatible With:</p>
+                    <div className="compatible-tags">
+                      {product.compatibleModels &&
+                      product.compatibleModels.length > 0 ? (
+                        product.compatibleModels.map((model, idx) => (
+                          <span key={idx} className="model-tag">
+                            {model}
+                          </span>
+                        ))
+                      ) : (
+                        <span className="model-tag" style={{ opacity: 0.5 }}>
+                          No compatible models listed
+                        </span>
+                      )}
+                    </div>
+                  </div>
 
                   <div className="product-stock">
                     <div className="stock-info-row">
@@ -237,39 +175,14 @@ const ProductsCatalog = () => {
                     </div>
                   </div>
 
-                  <div className="pricing-info" style={{ marginTop: "1rem" }}>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        alignItems: "baseline",
-                      }}
-                    >
-                      <p className="product-price" style={{ color: "#2563eb" }}>
-                        ₹{item.FinalPrice}
-                      </p>
+                  <div className="pricing-section">
+                    <div className="price-row">
+                      <p className="current-price">₹{item.FinalPrice}</p>
                       {product.mrp > item.FinalPrice && (
-                        <p
-                          style={{
-                            textDecoration: "line-through",
-                            color: "#94a3b8",
-                            fontSize: "0.9rem",
-                            margin: 0,
-                          }}
-                        >
-                          ₹{product.mrp}
-                        </p>
+                        <p className="mrp-strike">₹{product.mrp}</p>
                       )}
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        marginTop: "0.25rem",
-                        fontSize: "1rem",
-                        color: "#000000ff",
-                      }}
-                    >
+                    <div className="mrp-row">
                       <span>MRP: ₹{product.mrp}</span>
                     </div>
                   </div>

@@ -53,25 +53,28 @@ const BranchAccountDetail = () => {
   }, [id, getAccountsByBranch]);
 
   // Helpers
-  const getLatestBalance = (balanceHistory) => {
-    if (!balanceHistory || balanceHistory.length === 0) return 0;
-    // Sort by date descending and take the first one's closing balance
-    const latest = [...balanceHistory].sort(
+  const getLatestBalance = (account) => {
+    if (!account.balanceHistory || account.balanceHistory.length === 0)
+      return account.currentBalance || 0;
+
+    const latest = [...account.balanceHistory].sort(
       (a, b) => new Date(b.date) - new Date(a.date)
     )[0];
-    return latest?.closingBalance || 0;
+
+    // If session is still open, closingBalance is usually 0. In that case, use currentBalance.
+    return latest?.isClosed ? latest.closingBalance : account.currentBalance;
   };
 
   const calculateTotalByType = (type) => {
     return accounts
-      .filter((acc) => acc.type === type)
-      .reduce((sum, acc) => sum + getLatestBalance(acc.balanceHistory), 0);
+      .filter((acc) => acc.type.toLowerCase() === type.toLowerCase())
+      .reduce((sum, acc) => sum + (acc.currentBalance || 0), 0);
   };
 
-  const totalBalance = accounts.reduce(
-    (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
-    0
-  );
+  // const totalBalance = accounts.reduce(
+  //   (sum, acc) => sum + getLatestBalance(acc.balanceHistory),
+  //   0
+  // );
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
@@ -92,7 +95,11 @@ const BranchAccountDetail = () => {
   };
 
   // Filtered Accounts for current tab
-  const filteredAccounts = accounts.filter((acc) => acc.type === activeTab);
+  // Filtered Accounts for current tab
+  const filteredAccounts = accounts.filter(
+    (acc) => acc.type?.toLowerCase() === activeTab?.toLowerCase()
+  );
+  console.log("Filtered accounts for ", activeTab, ":", filteredAccounts);
 
   // Handlers
   const handleInputChange = (e) => {
@@ -307,7 +314,7 @@ const BranchAccountDetail = () => {
                 <div className="acc-balance-section">
                   <span className="label">Current Balance</span>
                   <span className="balance">
-                    {formatCurrency(getLatestBalance(account.balanceHistory))}
+                    {formatCurrency(account.currentBalance || 0)}
                   </span>
                 </div>
               </div>
@@ -343,7 +350,7 @@ const BranchAccountDetail = () => {
                           </tr>
                         </thead>
                         <tbody>
-                          {[...account.balanceHistory]
+                          {(account.balanceHistory || [])
                             .sort((a, b) => new Date(b.date) - new Date(a.date))
                             .map((item, idx) => (
                               <tr key={idx}>
@@ -357,10 +364,14 @@ const BranchAccountDetail = () => {
                                   </span>
                                 </td>
                                 <td className="td-amount dim">
-                                  {formatCurrency(item.openingBalance)}
+                                  {formatCurrency(item.openingBalance || 0)}
                                 </td>
                                 <td className="td-amount bold">
-                                  {formatCurrency(item.closingBalance)}
+                                  {formatCurrency(
+                                    item.isClosed
+                                      ? item.closingBalance
+                                      : item.expectedClosingBalance || 0
+                                  )}
                                 </td>
                               </tr>
                             ))}
@@ -392,7 +403,7 @@ const BranchAccountDetail = () => {
                   <tbody>
                     {filteredAccounts
                       .flatMap((acc) =>
-                        acc.balanceHistory.map((h) => ({
+                        (acc.balanceHistory || []).map((h) => ({
                           ...h,
                           accountName:
                             acc.upiAccountName || `${acc.type} Account`,
