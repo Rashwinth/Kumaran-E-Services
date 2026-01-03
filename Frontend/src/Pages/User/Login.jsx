@@ -3,12 +3,14 @@ import { useNavigate, Link } from "react-router-dom";
 import { toast } from "react-toastify";
 import { useAuth } from "../../Context/AuthContext";
 import Powered from "../../Components/Loading/Powered";
+import { getDecrypted } from "../../utils/storage";
 import "../../Styles/Login.css";
 
 const Login = () => {
   const navigate = useNavigate();
   const { login } = useAuth();
-  const branchCode = localStorage.getItem("branchCode");
+  const branch = getDecrypted("branch");
+  const branchCode = branch ? branch.code : null;
 
   const [formData, setFormData] = useState({
     identifier: "", // Can be email or employee ID
@@ -67,8 +69,8 @@ const Login = () => {
           <div className="login-visual-panel">
             <div className="visual-overlay"></div>
             <div className="visual-content">
-              <div className="company-logo-large">
-                <img src="/zyrix tech.png" alt="Kumaran E-Services" />
+              <div className="staff-login-logo">
+                <img src="/kes_logo.jpeg" alt="Kumaran E-Services" />
               </div>
               <h2 className="company-name-large">Kumaran E-Services</h2>
 
@@ -182,9 +184,9 @@ const Login = () => {
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                 <i className="bi bi-eye-slash text-dark fs-4"></i>
+                      <i className="bi bi-eye-slash text-dark fs-4"></i>
                     ) : (
-                    <i className="bi bi-eye text-dark fs-4"></i>
+                      <i className="bi bi-eye text-dark fs-4"></i>
                     )}
                   </button>
                 </div>

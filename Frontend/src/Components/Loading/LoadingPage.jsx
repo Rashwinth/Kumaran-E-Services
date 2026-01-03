@@ -5,6 +5,7 @@ import { useAuth } from "../../Context/AuthContext";
 import { API_ENDPOINTS } from "../../config/api.jsx";
 import Powered from "./Powered";
 import "../../Styles/Connection.css";
+import { getDecrypted } from "../../utils/storage";
 
 function LoadingPage() {
   const [status, setStatus] = useState("checking");
@@ -36,7 +37,8 @@ function LoadingPage() {
 
           // Wait for auth context to finish loading
           setTimeout(() => {
-            const branchCode = localStorage.getItem("branchCode");
+            const branch = getDecrypted("branch");
+            const branchCode = branch ? branch.code : null;
             const branchToken = localStorage.getItem("branchToken");
 
             if (!branchCode || !branchToken) {

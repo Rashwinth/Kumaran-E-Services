@@ -10,7 +10,7 @@ const AboutSettings = () => {
             <h4>App Version</h4>
             <p>Current software build version</p>
           </div>
-          <div className="fw-bold text-primary">v2.4.0-pro</div>
+          <div className="fw-bold text-primary">v1.2.0-pro</div>
         </div>
 
         <div className="setting-row">
@@ -29,8 +29,8 @@ const AboutSettings = () => {
             <p>For technical issues and hardware faults</p>
           </div>
           <div className="text-end">
-            <div className="fw-bold">Tharbyte Technologies</div>
-            <small className="text-muted">support@tharbyte.com</small>
+            <div className="fw-bold">Zyrix Technologies</div>
+            <small className="text-muted">support@Zyrix.com</small>
           </div>
         </div>
       </div>

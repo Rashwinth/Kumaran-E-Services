@@ -9,6 +9,7 @@ import {
   CACHE_KEYS,
   TTL,
 } from "../utils/cacheUtils";
+import { getDecrypted } from "../utils/storage";
 
 const ProductContext = createContext();
 
@@ -27,13 +28,13 @@ export const ProductProvider = ({ children }) => {
 
   const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api/staff`;
   const { accessToken } = useAuth();
-  const branch = JSON.parse(localStorage.getItem("branch"));
-  const BranchId = branch._id;
+  const branch = getDecrypted("branch");
+  const BranchId = branch ? branch._id : null;
 
   // Fetch all products
   const getProducts = useCallback(
     async (forceRefresh = false) => {
-      if (!accessToken) return;
+      if (!accessToken || !BranchId) return;
 
       try {
         setProductsLoading(true);
@@ -66,7 +67,7 @@ export const ProductProvider = ({ children }) => {
         setProductsLoading(false);
       }
     },
-    [accessToken, baseURL]
+    [accessToken, baseURL, BranchId]
   );
 
   // Fetch all categories

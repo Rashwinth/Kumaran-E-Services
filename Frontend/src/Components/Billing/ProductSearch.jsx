@@ -5,6 +5,12 @@ const ProductSearch = ({
   onAddToCart,
   searchInputRef,
   barcodeScannerEnabled,
+  showButton = true,
+  isTable = false,
+  minimal = false,
+  placeholder = "",
+  dropdownWidth = "100%",
+  skuOnly = false,
 }) => {
   const [searchQuery, setSearchQuery] = useState("");
   const [suggestions, setSuggestions] = useState([]);
@@ -17,12 +23,30 @@ const ProductSearch = ({
     setSelectedIndex(-1);
 
     if (query.trim()) {
-      const filtered = products.filter(
-        (p) =>
-          p.name.toLowerCase().includes(query.toLowerCase()) ||
-          p.sku.toLowerCase() === query.toLowerCase() || // Exact SKU Match
+      let filtered;
+      if (skuOnly) {
+        // Only search by SKU in table mode if skuOnly is true
+        filtered = products.filter((p) =>
           p.sku.toLowerCase().includes(query.toLowerCase())
-      );
+        );
+
+        // Auto-select if it's an exact SKU match
+        const exactMatch = filtered.find(
+          (p) => p.sku.toLowerCase() === query.trim().toLowerCase()
+        );
+        if (exactMatch) {
+          onAddToCart(exactMatch);
+          clearSearch();
+          return; // Exit early
+        }
+      } else {
+        filtered = products.filter(
+          (p) =>
+            p.name.toLowerCase().includes(query.toLowerCase()) ||
+            p.sku.toLowerCase() === query.toLowerCase() || // Exact SKU Match
+            p.sku.toLowerCase().includes(query.toLowerCase())
+        );
+      }
 
       // Barcode Scanner Optimization: If exact SKU match is found, prioritize it
       const exactMatch = filtered.find(
@@ -110,30 +134,59 @@ const ProductSearch = ({
   };
 
   return (
-    <div className="position-relative w-100">
-      <form onSubmit={handleSearchSubmit} className="d-flex gap-2">
-        <div className="input-group flex-grow-1 shadow-sm">
-          <span className="input-group-text bg-white border-end-0">
-            <i className="bi bi-search text-primary"></i>
-          </span>
+    <div className={`position-relative w-100 ${isTable ? "my-0" : ""}`}>
+      <form
+        onSubmit={handleSearchSubmit}
+        className={`d-flex gap-2 ${isTable ? "m-0" : ""}`}
+      >
+        <div
+          className={`input-group flex-grow-1 ${
+            isTable && !minimal
+              ? "shadow-none"
+              : isTable && minimal
+              ? ""
+              : "shadow-sm"
+          }`}
+        >
+          {!minimal && (
+            <span
+              className={`input-group-text bg-white border-end-0 ${
+                isTable ? "py-1 px-2" : ""
+              }`}
+            >
+              <i
+                className={`bi bi-search ${
+                  isTable ? "text-muted" : "text-primary"
+                }`}
+              ></i>
+            </span>
+          )}
           <input
             ref={searchInputRef}
             type="text"
-            className="form-control border-start-0 ps-0 fw-medium"
+            className={`form-control ${
+              minimal ? "border-0 bg-transparent" : "border-start-0 ps-0"
+            } ${isTable ? "fw-normal py-1" : "fw-medium"}`}
             placeholder={
-              barcodeScannerEnabled
+              placeholder ||
+              (barcodeScannerEnabled
                 ? "Scan Barcode or Search..."
-                : "Search Product Name or SKU..."
+                : "Search Product Name or SKU...")
             }
             value={searchQuery}
             onChange={handleSearchChange}
             onKeyDown={handleKeyDown}
             onFocus={() => searchQuery && setShowSuggestions(true)}
             autoComplete="off"
-            style={{ height: "45px" }}
+            style={{
+              height: isTable ? "35px" : "45px",
+              fontSize: isTable ? "0.85rem" : "inherit",
+              outline: "none",
+              boxShadow: "none",
+            }}
           />
-          {/* Barcode Scan Focus Button (from Admin) */}
-          {barcodeScannerEnabled && (
+          {/* Barcode Scan Focus Button - only if not minimal */}
+          {barcodeScannerEnabled && !minimal && (
             <button
               type="button"
               className="btn btn-light border-start border-top border-bottom"
@@ -144,28 +197,42 @@ const ProductSearch = ({
                 background: "#f8fafc",
                 borderTopRightRadius: "0",
                 borderBottomRightRadius: "0",
+                width:"45px",
+                padding: isTable ? "0 8px" : "inherit",
               }}
             >
-              <i className="bi bi-qr-code-scan text-muted"></i>
+              <i
+                className={`bi bi-qr-code-scan text-muted ${
+                  isTable ? "small" : ""
+                }`}
+              ></i>
             </button>
           )}
         </div>
-        <button
-          type="submit"
-          className="btn btn-primary px-4 fw-bold d-flex align-iitems-center justify-content-center gap-1"
-          disabled={!searchQuery.trim()}
-          style={{ height: "50px" }}
-        >
-          <i className="bi bi-search me-2 mt-2"></i>
-          <span className="mt-2">Search</span>
-        </button>
+        {showButton && !minimal && (
+          <button
+            type="submit"
+            className="btn btn-primary px-4 fw-bold d-flex align-iitems-center justify-content-center gap-1"
+            disabled={!searchQuery.trim()}
+            style={{ height: "50px" }}
+          >
+            <i className="bi bi-search me-2 mt-2"></i>
+            <span className="mt-2">Search</span>
+          </button>
+        )}
       </form>
 
       {/* Suggestions Dropdown */}
       {showSuggestions && suggestions.length > 0 && (
         <div
-          className="position-absolute start-0 w-100 shadow-lg rounded bg-white mt-2 border"
-          style={{ zIndex: 9999, maxHeight: "350px", overflowY: "auto" }}
+          className="position-absolute start-0 shadow-lg rounded bg-white mt-1 border"
+          style={{
+            zIndex: 9999,
+            maxHeight: "350px",
+            overflowY: "auto",
+            width: dropdownWidth,
+            minWidth: isTable ? "450px" : "100%",
+          }}
         >
           <ul className="list-group list-group-flush m-0">
             {suggestions.map((product, index) => (

@@ -49,6 +49,7 @@ exports.verifyBranch = async (req, res) => {
       success: true,
       message: "Branch verified successfully",
       branch: {
+        _id: branch._id,
         name: branch.name,
         code: branch.code,
       },

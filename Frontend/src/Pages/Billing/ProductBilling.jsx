@@ -13,7 +13,13 @@ import CustomerModal from "../../Components/Billing/CustomerModal";
 import { removeCache, CACHE_KEYS } from "../../utils/cacheUtils";
 import { useNavigate } from "react-router-dom";
 import ShortcutGuide from "../../Components/Navigation/ShortcutGuide";
-import { getDecrypted } from "../../utils/storage";
+import { getDecrypted, saveEncrypted } from "../../utils/storage";
+
+const getCurrencySymbol = (settingValue) => {
+  if (!settingValue) return "₹"; // Default
+  const match = settingValue.match(/\(([^)]+)\)/);
+  return match ? match[1] : settingValue;
+};
 
 const ProductBilling = () => {
   const {
@@ -28,6 +34,7 @@ const ProductBilling = () => {
 
   const [dateTime, setDateTime] = useState(new Date());
   const searchInputRef = useRef(null);
+  const tableSearchInputRef = useRef(null);
   const discountRefs = useRef({}); // To store refs for discount inputs
   const [appSettings, setAppSettings] = useState(null);
 
@@ -230,7 +237,10 @@ const ProductBilling = () => {
   };
 
   const fetchBranch = async () => {
-    const branchcode = localStorage.getItem("branchCode");
+    const branch = getDecrypted("branch");
+    const branchcode = branch ? branch.code : null;
+
+    if (!branchcode) return; // Handle case where branch code is missing
 
     try {
       const res = await axios.get(`${API_ENDPOINTS.BRANCH}/${branchcode}`, {
@@ -240,7 +250,7 @@ const ProductBilling = () => {
       if (res.data.success) {
         const branch = res.data.branch;
         if (branch) {
-          localStorage.setItem("branch", JSON.stringify(branch));
+          saveEncrypted("branch", branch);
         }
       }
     } catch (error) {
@@ -395,7 +405,7 @@ const ProductBilling = () => {
         clearTransaction();
       } else if (e.key === "F6") {
         e.preventDefault();
-        searchInputRef.current?.focus();
+        tableSearchInputRef.current?.focus();
       } else if (e.key === "F8") {
         e.preventDefault();
         if (cart.length > 0) {
@@ -408,9 +418,6 @@ const ProductBilling = () => {
       } else if (e.key === "F10") {
         e.preventDefault();
         handlePayment(true);
-      } else if (e.key === "F11") {
-        e.preventDefault();
-        navigate("/reports");
       } else if (e.key === "F12") {
         e.preventDefault();
         setShowShortcutGuide((prev) => !prev);
@@ -435,18 +442,6 @@ const ProductBilling = () => {
         e.preventDefault();
         undoRemove();
       }
-      if (e.altKey && e.key === "s") {
-        e.preventDefault();
-        navigate("/settings");
-      }
-      if (e.altKey && e.key === "l") {
-        e.preventDefault();
-        logout();
-      }
-      if (e.ctrlKey && e.key === "f") {
-        e.preventDefault();
-        navigate("/product-catalog");
-      }
 
       // --- Global Barcode Scanner Listener ---
       // Only runs if scanner is enabled in settings
@@ -457,7 +452,7 @@ const ProductBilling = () => {
 
         // If search bar is NOT focused and user starts "typing" alphanumeric characters
         if (!isInputFocused && /^[a-zA-Z0-9]$/.test(e.key)) {
-          searchInputRef.current?.focus();
+          tableSearchInputRef.current?.focus();
           // The first character is already lost from the input value if we just focus,
           // so we can either wait for a library or manually handle the buffer.
           // For simplicity, we just focus and the scanner usually types the rest fast enough.
@@ -490,119 +485,6 @@ const ProductBilling = () => {
         onCustomerAdded={handleCustomerAdded}
         accessToken={accessToken}
       />
-
-      {/* Top Navigation */}
-      <div
-        className="bg-white border-bottom px-4 py-2 d-flex justify-content-between align-items-center"
-        style={{ minHeight: "65px" }}
-      >
-        <div className="d-flex align-items-center gap-4">
-          {/* Branch Info */}
-          <div className="d-flex align-items-center gap-2">
-            <div
-              className="bg-primary bg-opacity-10 text-primary rounded d-flex align-items-center justify-content-center"
-              style={{ width: "32px", height: "32px" }}
-            >
-              <i className="bi bi-shop fs-6"></i>
-            </div>
-            <div>
-              <h6
-                className="mb-0 fw-bold"
-                style={{ fontSize: "0.7rem", color: "#6c757d" }}
-              >
-                BRANCH
-              </h6>
-              <div className="fw-bold text-dark small">{user?.branchCode}</div>
-            </div>
-          </div>
-
-          <div className="vr opacity-10" style={{ height: "30px" }}></div>
-
-          {/* Staff Info */}
-          <div className="d-flex align-items-center gap-2">
-            <div
-              className="bg-success bg-opacity-10 text-success rounded d-flex align-items-center justify-content-center"
-              style={{ width: "32px", height: "32px" }}
-            >
-              <i className="bi bi-person fs-6"></i>
-            </div>
-            <div>
-              <h6
-                className="mb-0 fw-bold"
-                style={{ fontSize: "0.7rem", color: "#6c757d" }}
-              >
-                STAFF
-              </h6>
-              <div className="fw-bold text-dark small">
-                {user?.name?.toUpperCase()}
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* Status Group: Shortcuts & Time */}
-        <div className="d-flex align-items-center gap-4">
-          {/* Shortcuts Section */}
-          <div className="d-flex align-items-center gap-3">
-            <span
-              className="text-uppercase fw-bold text-muted"
-              style={{ fontSize: "0.6rem", letterSpacing: "0.05em" }}
-            >
-              Shortcuts:
-            </span>
-            <div className="d-flex gap-3">
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd className="bg-secondary text-white fw-normal me-1">F1</kbd>
-                New Cust
-              </small>
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd className="bg-secondary text-white fw-normal me-1">F2</kbd>
-                Search
-              </small>
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd className="bg-secondary text-white fw-normal me-1">F9</kbd>
-                Save
-              </small>
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd className="bg-secondary text-white fw-normal me-1">
-                  F10
-                </kbd>
-                Print
-              </small>
-              <small className="text-muted" style={{ fontSize: "0.75rem" }}>
-                <kbd className="bg-info text-white fw-normal me-1">F12</kbd>
-                Help
-              </small>
-            </div>
-          </div>
-
-          <div className="vr opacity-10" style={{ height: "30px" }}></div>
-
-          {/* Time and Date */}
-          <div className="text-end">
-            <div className="d-flex align-items-center gap-2 justify-content-end">
-              <i className="bi bi-clock text-primary small"></i>
-              <h6 className="mb-0 fw-bold text-primary small">
-                {dateTime.toLocaleTimeString([], {
-                  hour: "2-digit",
-                  minute: "2-digit",
-                  second: "2-digit",
-                })}
-              </h6>
-            </div>
-            <small
-              className="text-muted d-block mt-1"
-              style={{ fontSize: "0.75rem" }}
-            >
-              {dateTime.toLocaleDateString(undefined, {
-                weekday: "short",
-                day: "numeric",
-                month: "short",
-              })}
-            </small>
-          </div>
-        </div>
-      </div>
 
       {/* Main Content Area */}
       <div className="flex-grow-1 p-3 overflow-hidden d-flex flex-column">
@@ -736,7 +618,7 @@ const ProductBilling = () => {
                     <tbody className="border-top-0">
                       {cart.length === 0 ? (
                         <tr>
-                          <td
+                          {/* <td
                             colSpan="8"
                             className="text-center text-muted py-5"
                           >
@@ -748,7 +630,7 @@ const ProductBilling = () => {
                                 here
                               </p>
                             </div>
-                          </td>
+                          </td> */}
                         </tr>
                       ) : (
                         cartWithTotals.map((item, idx) => (
@@ -799,7 +681,10 @@ const ProductBilling = () => {
                                 </small>
                               </div>
                             </td>
-                            <td className="text-end small">₹{item.price}</td>
+                            <td className="text-end small">
+                              {getCurrencySymbol(appSettings?.currency)}
+                              {item.price}
+                            </td>
                             <td>
                               <input
                                 type="number"
@@ -840,7 +725,8 @@ const ProductBilling = () => {
                               </div>
                             </td>
                             <td className="text-end fw-bold small">
-                              ₹{item.lineTotal.toFixed(2)}
+                              {getCurrencySymbol(appSettings?.currency)}
+                              {item.lineTotal.toFixed(2)}
                             </td>
                             <td className="text-center">
                               <button
@@ -853,6 +739,46 @@ const ProductBilling = () => {
                           </tr>
                         ))
                       )}
+
+                      {/* Add Product Row */}
+                      <tr className="bg-light bg-opacity-25">
+                        <td className="text-center small ps-3 text-muted">
+                          {cart.length + 1}
+                        </td>
+                        <td className="p-0 border-end">
+                          <ProductSearch
+                            products={allProducts}
+                            onAddToCart={addToCart}
+                            searchInputRef={tableSearchInputRef}
+                            barcodeScannerEnabled={appSettings?.barcodeScanner}
+                            showButton={false}
+                            isTable={true}
+                            minimal={true}
+                            placeholder="Enter SKU or Scan barcode."
+                            dropdownWidth="400px"
+                            skuOnly={true}
+                          />
+                        </td>
+                        <td className="text-muted small align-middle ps-3">
+                          <span className="opacity-50 italic">
+                            Search item to add to cart...
+                          </span>
+                        </td>
+                        <td className="text-center text-muted opacity-25">
+                          --
+                        </td>
+                        <td className="text-end text-muted opacity-25 px-3">
+                          {getCurrencySymbol(appSettings?.currency)}0.00
+                        </td>
+                        <td className="text-center text-muted opacity-25">0</td>
+                        <td className="text-end text-muted opacity-25 px-3">
+                          0%
+                        </td>
+                        <td className="text-end text-muted opacity-25 px-3">
+                          {getCurrencySymbol(appSettings?.currency)}0.00
+                        </td>
+                        <td className="text-center"></td>
+                      </tr>
                     </tbody>
                   </table>
                 </div>
@@ -873,19 +799,22 @@ const ProductBilling = () => {
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted small">Subtotal</span>
                     <span className="fw-bold small">
-                      ₹{subtotal.toFixed(2)}
+                      {getCurrencySymbol(appSettings?.currency)}
+                      {subtotal.toFixed(2)}
                     </span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted small">Tax (GST)</span>
                     <span className="fw-bold small">
-                      ₹{totalTax.toFixed(2)}
+                      {getCurrencySymbol(appSettings?.currency)}
+                      {totalTax.toFixed(2)}
                     </span>
                   </div>
                   <div className="d-flex justify-content-between mb-2">
                     <span className="text-muted small">Total Discount</span>
                     <span className="fw-bold small text-danger">
-                      - ₹{totalDiscount.toFixed(2)}
+                      - {getCurrencySymbol(appSettings?.currency)}
+                      {totalDiscount.toFixed(2)}
                     </span>
                   </div>
                   <hr className="my-2 opacity-10" />
@@ -898,7 +827,8 @@ const ProductBilling = () => {
                         TOTAL PAYABLE
                       </span>
                       <span className="fs-3 fw-bold text-primary">
-                        ₹{grandTotal.toFixed(2)}
+                        {getCurrencySymbol(appSettings?.currency)}
+                        {grandTotal.toFixed(2)}
                       </span>
                     </div>
                     <div className="text-end pb-1">
@@ -954,7 +884,7 @@ const ProductBilling = () => {
                     <div className="d-flex justify-content-between mb-1">
                       <small className="text-muted">Account Balance:</small>
                       <small className="fw-bold">
-                        ₹
+                        {getCurrencySymbol(appSettings?.currency)}
                         {accounts
                           .find((a) => a._id === selectedAccountId)
                           ?.currentBalance?.toFixed(2) || "0.00"}

@@ -1,5 +1,7 @@
 import React from "react";
 
+import currencies from "../../data/currencies.json";
+
 const GeneralSettings = ({ branchInfo, settings, handleChange }) => {
   return (
     <div className="settings-section">
@@ -23,17 +25,19 @@ const GeneralSettings = ({ branchInfo, settings, handleChange }) => {
 
         <div className="setting-row border-top pt-4">
           <div className="setting-info">
-            <h4>Language</h4>
-            <p>Primary display language for the interface</p>
+            <h4>Currency</h4>
+            <p>Select the billing currency symbol</p>
           </div>
           <select
             className="settings-select"
-            value={settings.language}
-            onChange={(e) => handleChange("language", e.target.value)}
+            value={settings.currency}
+            onChange={(e) => handleChange("currency", e.target.value)}
           >
-            <option>English</option>
-            <option>Tamil</option>
-            <option>Hindi</option>
+            {currencies.map((curr) => (
+              <option key={curr.code} value={`${curr.code} (${curr.symbol})`}>
+                {curr.name} - {curr.code} ({curr.symbol})
+              </option>
+            ))}
           </select>
         </div>
 

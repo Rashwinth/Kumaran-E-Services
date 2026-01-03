@@ -12,7 +12,7 @@
 }
 
 .login-container {
-  min-height: 100vh;
+  min-height: 90vh;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -68,7 +68,7 @@
   z-index: 1;
   width: 100%;
   max-width: 1000px;
-  padding: 2rem;
+  padding: 1rem;
 }
 
 /* Wide Split Card Design */
@@ -78,7 +78,7 @@
   border-radius: 28px;
   overflow: hidden;
   box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
-  min-height: 640px;
+  max-height: 700px;
   border: 1px solid rgba(255, 255, 255, 0.2);
   animation: elegantScaleIn 0.8s cubic-bezier(0.16, 1, 0.3, 1);
 }
@@ -122,20 +122,28 @@
   z-index: 2;
 }
 
-.company-logo-large {
-  width: 80px;
-  height: 80px;
-  background: white;
-  border-radius: 20px;
-  padding: 10px;
+.staff-login-logo {
+  width: 100px;
+  height: 100px;
+  /* background: white; */
+  border-radius: 22px;
+  /* padding: 12px; */
   margin-bottom: 2rem;
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  margin-left: 30%;
 }
 
-.company-logo-large img {
+.staff-login-logo img {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  filter: drop-shadow(0 4px 6px rgba(0, 0, 0, 0.1));
+  border-radius: 20px;
+  
 }
 
 .company-name-large {
@@ -154,10 +162,11 @@
 }
 
 .terminal-icon {
-  width: 48px;
-  height: 48px;
+  width: 50px;
+  height: 50px;
   background: rgba(255, 255, 255, 0.1);
   border-radius: 12px;
+  padding: 10px;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -179,7 +188,7 @@
 }
 
 .branch-id-box {
-  margin-top: 3rem;
+  margin-top: 1rem;
   background: rgba(255, 255, 255, 0.05);
   border: 1px solid rgba(255, 255, 255, 0.1);
   border-radius: 16px;

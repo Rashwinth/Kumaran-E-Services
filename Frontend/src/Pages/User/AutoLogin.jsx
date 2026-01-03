@@ -4,6 +4,8 @@ import { Loader2, ShieldCheck, AlertCircle } from "lucide-react";
 import Powered from "../../Components/Loading/Powered";
 import "../../Styles/Connection.css"; // Reuse connection styling
 
+import { getDecrypted } from "../../utils/storage";
+
 const AutoLogin = () => {
   const navigate = useNavigate();
   const [status, setStatus] = useState("verifying"); // verifying, success, error
@@ -12,7 +14,8 @@ const AutoLogin = () => {
   useEffect(() => {
     const performAutoLogin = async () => {
       try {
-        const branchCode = localStorage.getItem("branchCode");
+        const branch = getDecrypted("branch");
+        const branchCode = branch ? branch.code : null;
         const branchToken = localStorage.getItem("branchToken");
 
         if (!branchCode || !branchToken) {

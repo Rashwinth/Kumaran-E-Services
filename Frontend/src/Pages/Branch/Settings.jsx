@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from "react";
+import { useLocation, useNavigate } from "react-router-dom";
 import "../../Styles/Settings.css";
 import { toast } from "react-toastify";
 import { useAuth } from "../../Context/AuthContext";
+import { useBilling } from "../../Context/BillingContext";
 
 // Sub-components
 import SettingsSidebar from "../../Components/Settings/SettingsSidebar";
@@ -14,7 +16,19 @@ import { saveEncrypted, getDecrypted } from "../../utils/storage";
 
 function Settings() {
   const { user } = useAuth();
+  const location = useLocation();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("general");
+
+  useEffect(() => {
+    const hash = location.hash.replace("#", "");
+    if (hash) {
+      setActiveTab(hash);
+    } else {
+      // Default to general if no hash
+      navigate("#general", { replace: true });
+    }
+  }, [location, navigate]);
 
   const [settings, setSettings] = useState(() => {
     const saved = getDecrypted("app_settings");
@@ -55,16 +69,15 @@ function Settings() {
   });
 
   useEffect(() => {
-    const storedBranch = localStorage.getItem("branch");
+    const storedBranch = getDecrypted("branch");
     if (storedBranch) {
-      const parsed = JSON.parse(storedBranch);
       setBranchInfo({
-        name: parsed.name,
-        code: parsed.code,
-        address: `${parsed.address?.street || ""}, ${
-          parsed.address?.city || ""
+        name: storedBranch.name,
+        code: storedBranch.code || storedBranch.branchCode, // Fallback for safety
+        address: `${storedBranch.address?.street || ""}, ${
+          storedBranch.address?.city || ""
         }`,
-        contact: parsed.contact?.phone || "N/A",
+        contact: storedBranch.contact?.phone || "N/A",
       });
     }
   }, [user]);
@@ -82,17 +95,32 @@ function Settings() {
     toast.success("Settings saved securely!");
   };
 
-  const handleSync = () => {
+  const { refreshProducts, refreshCustomers } = useBilling();
+
+  const handleSync = async () => {
     const toastId = toast.loading("Synchronizing data...");
-    setTimeout(() => {
+    try {
+      await Promise.all([
+        refreshProducts ? refreshProducts() : Promise.resolve(),
+        refreshCustomers ? refreshCustomers() : Promise.resolve(),
+      ]);
+
+      localStorage.setItem("last_sync", new Date().toLocaleString());
       toast.update(toastId, {
-        render: "Data synchronized perfectly!",
+        render: "Data synchronized successfully!",
         type: "success",
         isLoading: false,
         autoClose: 3000,
       });
-      localStorage.setItem("last_sync", new Date().toLocaleString());
-    }, 1500);
+    } catch (error) {
+      console.error("Sync error:", error);
+      toast.update(toastId, {
+        render: "Sync failed. Please try again.",
+        type: "error",
+        isLoading: false,
+        autoClose: 3000,
+      });
+    }
   };
 
   return (
@@ -130,7 +158,7 @@ function Settings() {
 
           {activeTab === "about" && <AboutSettings />}
 
-          {activeTab !== "accounts" && (
+          {!["accounts", "sync", "about"].includes(activeTab) && (
             <div className="d-flex justify-content-end">
               <button className="btn-save-settings" onClick={saveSettings}>
                 Save Preferences

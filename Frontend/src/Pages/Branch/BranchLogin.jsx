@@ -5,6 +5,7 @@ import axios from "axios";
 import { Shield, Layout, LogIn, Hash } from "lucide-react";
 import Powered from "../../Components/Loading/Powered";
 import { API_ENDPOINTS } from "../../config/api.jsx";
+import { saveEncrypted } from "../../utils/storage";
 import "../../Styles/BranchLogin.css";
 
 const BranchLogin = () => {
@@ -47,7 +48,9 @@ const BranchLogin = () => {
       );
 
       if (response.data.success) {
-        localStorage.setItem("branchCode", response.data.branch.code);
+        // Store full branch object encrypted
+        saveEncrypted("branch", response.data.branch);
+        // localStorage.setItem("branchCode", response.data.branch.code); // Removed in favor of encrypted object
         localStorage.setItem("branchToken", `verified_${Date.now()}`);
         toast.success("Branch authenticated successfully!");
         setTimeout(() => {

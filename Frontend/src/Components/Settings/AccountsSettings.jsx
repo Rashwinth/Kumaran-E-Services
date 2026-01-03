@@ -203,7 +203,7 @@ const AccountsSettings = () => {
 
       {accounts.length === 0 && (
         <div className="text-center py-5">
-          <i className="bi bi-wallet2 fs-1 text-muted d-block mb-3"></i>
+          <i className="fa-solid fa-vault fs-1 text-muted d-block mb-3"></i>
           <p className="text-muted">No accounts found for your branch</p>
         </div>
       )}

@@ -27,13 +27,13 @@ const SidebarNav = () => {
       id: "investors",
       label: "Investors",
       icon: "bi-briefcase",
-      path: "#investors",
+      path: "/investors",
     },
     {
       id: "sale-history",
       label: "Sale History",
       icon: "bi-graph-up",
-      path: "#sale-history",
+      path: "/sale-history",
     },
         {
       id: "settings",
@@ -87,8 +87,8 @@ const SidebarNav = () => {
             }}
           >
             <i
-              className={`bi ${
-                sidebarOpen ? "bi-chevron-left" : "bi-chevron-right"
+              className={`fas ${
+                sidebarOpen ? "fa-angle-double-left" : "fa-angle-double-right"
               } fs-6`}
             ></i>
           </button>

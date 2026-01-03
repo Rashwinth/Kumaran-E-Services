@@ -20,7 +20,6 @@ import LoadingPage from "./Components/Loading/LoadingPage";
 
 // Components
 import SidebarNav from "./Components/Navigation/SidebarNav";
-import TabNav from "./Components/Navigation/TabNav";
 import ScrollToTop from "./Components/ScrollToTop";
 
 // Context
@@ -45,6 +44,10 @@ const ProtectedRoute = () => {
   return <Outlet />;
 };
 
+// Footer
+import Footer from "./Components/Footer";
+import GlobalHeader from "./Components/Navigation/GlobalHeader";
+
 // Layout wrapper to conditionally show Header and Sidebar
 const Layout = ({ children }) => {
   const location = useLocation();
@@ -63,22 +66,37 @@ const Layout = ({ children }) => {
     return <div className="main-content">{children}</div>;
   }
 
-  // Otherwise, return the full app layout with Sidebar, Header, and TabNav
+  const isBillingPage = location.pathname === "/billing";
+
+  // Otherwise, return the full app layout with Sidebar, Header
   return (
     <div className="app-container">
       <div className="app-main-layout">
         <SidebarNav />
         <div className="main-content-area">
+          <GlobalHeader />
           <div className="content-viewport">{children}</div>
+          {!isBillingPage && <Footer />}
         </div>
       </div>
     </div>
   );
 };
 
+// Hooks
+import useGlobalShortcuts from "./hooks/useGlobalShortcuts";
+import SaleHistory from "./Pages/Branch/SaleHistory";
+import Investors from "./Pages/Branch/Investors";
+
+function GlobalKeyboardListener() {
+  useGlobalShortcuts();
+  return null;
+}
+
 function AppContent() {
   return (
     <Router>
+      <GlobalKeyboardListener />
       <ScrollToTop />
       <Layout>
         <ToastContainer position="top-center" autoClose={3000} />
@@ -95,6 +113,8 @@ function AppContent() {
             <Route path="/billing" element={<ProductBilling />} />
             <Route path="/settings" element={<Settings />} />
             <Route path="/product-catalog" element={<ProductsCatalog />} />
+            <Route path="/investors" element={<Investors />} />
+            <Route path="/sale-history" element={<SaleHistory />} />
 
             {/* Add more protected routes here */}
           </Route>
