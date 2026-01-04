@@ -12,7 +12,6 @@ exports.createSale = async (req, res) => {
   const session = await mongoose.startSession();
   session.startTransaction();
   try {
-
     const {
       customer, // Customer ID (Optional for walk-ins, we handle it)
       items,
@@ -87,24 +86,6 @@ exports.createSale = async (req, res) => {
       createdAt: new Date(),
     };
 
-    // If payment is "Credits", we must have a real customer (not walk-in with phone 0000000000)
-    if (account.type === "Credits") {
-      const custDoc = await Customer.findById(customerId).session(session);
-      if (custDoc.phone === "0000000000") {
-        throw new Error(
-          "Credits are not allowed for Walk-in Customers. Please register the customer first."
-        );
-      }
-
-      // Update Customer Credits Array
-      custDoc.credits.push({
-        date: new Date(),
-        products: items.map((i) => i.product),
-        totalAmount: grandTotal,
-      });
-      await custDoc.save({ session });
-    }
-
     // 3. Update/Create Daily Sale Record
     const updateData = {
       $push: { sales: individualSale },
@@ -124,6 +105,20 @@ exports.createSale = async (req, res) => {
       updateData,
       { upsert: true, new: true, session }
     );
+
+    // If payment is "Credits", update Customer Credits with Sale ID and BillNumber
+    if (account.type === "Credits") {
+      const custDoc = await Customer.findById(customerId).session(session);
+      // We already checked walk-in above, but for clarity let's just push
+      custDoc.credits.push({
+        date: new Date(),
+        products: items.map((i) => i.product),
+        totalAmount: grandTotal,
+        sale: saleRecord._id,
+        billNumber: billNumber,
+      });
+      await custDoc.save({ session });
+    }
 
     // 4. Update Account Balance & Daily Session
     const { ensureDailySession } = require("./accountController");

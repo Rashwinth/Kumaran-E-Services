@@ -225,17 +225,13 @@ const SaleHistory = () => {
       style={{ height: "calc(100vh - 65px)", overflowY: "auto" }}
     >
       <div className="d-flex justify-content-between align-items-center mb-4">
-        <div>
+        {/* <div>
           <h2 className="fw-bold mb-1 text-dark">Sale History</h2>
           <p className="text-muted small mb-0">
             View and manage past transactions
           </p>
-        </div>
-        <div>
-          <button className="btn btn-outline-primary btn-sm rounded-pill px-3">
-            <i className="bi bi-download me-2"></i>Export Report
-          </button>
-        </div>
+        </div> */}
+     
       </div>
 
       <SaleHistoryStats data={filteredData} />

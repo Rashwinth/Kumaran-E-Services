@@ -102,6 +102,11 @@ const SaleHistoryFilters = ({ filters, onFilterChange, onReset }) => {
             <option value="Lowest">Lowest Amount</option>
           </select>
         </div>
+        <div className="col-md-3 d-flex align-items-end">
+          <button className="btn btn-light w-100 fw-bold text-secondary border">
+            <i className="bi bi-download me-2"></i>Export Report
+          </button>
+        </div>
       </div>
     </div>
   );

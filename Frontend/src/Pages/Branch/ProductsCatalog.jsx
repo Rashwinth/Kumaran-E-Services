@@ -58,14 +58,14 @@ const ProductsCatalog = () => {
 
   return (
     <div className="products-container">
-      <div className="products-header">
+      {/* <div className="products-header">
         <div className="header-left">
           <h1>Products Catalog</h1>
           <p className="products-count">
             {filteredProducts.length} products found
           </p>
         </div>
-      </div>
+      </div> */}
 
       <div className="products-filters">
         <div className="search-box">

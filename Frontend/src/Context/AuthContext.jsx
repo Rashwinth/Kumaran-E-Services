@@ -34,10 +34,23 @@ export const AuthProvider = ({ children }) => {
     setAccessToken(null);
     setUser(null);
     setIsAuthenticated(false);
+    localStorage.removeItem("kes_offline_session");
   }, []);
 
   // Refresh access token using HTTP-only cookie
   const refreshAccessToken = useCallback(async () => {
+    // Proactively check offline status to avoid axios hang
+    if (!navigator.onLine) {
+      const savedSession = localStorage.getItem("kes_offline_session");
+      if (savedSession) {
+        const { user: savedUser } = JSON.parse(savedSession);
+        setUser(savedUser);
+        setIsAuthenticated(true);
+        return null;
+      }
+      throw new Error("Offline and no saved session");
+    }
+
     try {
       const response = await axios.post(
         API_ENDPOINTS.AUTH.REFRESH,
@@ -51,6 +64,14 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
+        // Persist session for offline refresh
+        localStorage.setItem(
+          "kes_offline_session",
+          JSON.stringify({
+            user: response.data.user,
+            timestamp: Date.now(),
+          })
+        );
         return response.data.accessToken;
       } else {
         throw new Error("Token refresh failed");

@@ -5,6 +5,13 @@ const creditItemSchema = new mongoose.Schema({
     type: Date,
     default: Date.now,
   },
+  sale: {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "Sale",
+  },
+  billNumber: {
+    type: String,
+  },
   products: [
     {
       type: mongoose.Schema.Types.ObjectId,

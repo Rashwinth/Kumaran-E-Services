@@ -16,6 +16,7 @@ import Login from "./Pages/User/Login";
 import BranchLogin from "./Pages/Branch/BranchLogin";
 import AutoLogin from "./Pages/User/AutoLogin";
 import ProductBilling from "./Pages/Billing/productBilling";
+import Loader from "./Components/Loading/universalLoader";
 import LoadingPage from "./Components/Loading/LoadingPage";
 
 // Components
@@ -27,14 +28,12 @@ import { useAuth } from "./Context/AuthContext";
 import Settings from "./Pages/Branch/Settings";
 import ProductsCatalog from "./Pages/Branch/ProductsCatalog";
 
-// Style
-
 // Protected Route Component
 const ProtectedRoute = () => {
   const { isAuthenticated, loading } = useAuth();
 
   if (loading) {
-    return <LoadingPage />;
+    return <Loader message="Authenticating..." />;
   }
 
   if (!isAuthenticated) {
@@ -87,6 +86,7 @@ const Layout = ({ children }) => {
 import useGlobalShortcuts from "./hooks/useGlobalShortcuts";
 import SaleHistory from "./Pages/Branch/SaleHistory";
 import Investors from "./Pages/Branch/Investors";
+import Customer from "./Pages/Branch/Customer";
 
 function GlobalKeyboardListener() {
   useGlobalShortcuts();
@@ -114,6 +114,7 @@ function AppContent() {
             <Route path="/settings" element={<Settings />} />
             <Route path="/product-catalog" element={<ProductsCatalog />} />
             <Route path="/investors" element={<Investors />} />
+            <Route path="/customers" element={<Customer />} />
             <Route path="/sale-history" element={<SaleHistory />} />
 
             {/* Add more protected routes here */}

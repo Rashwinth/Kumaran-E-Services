@@ -22,6 +22,10 @@ const useGlobalShortcuts = () => {
         e.preventDefault();
         logout();
       }
+      if (e.shiftKey && e.key === "C") {
+        e.preventDefault();
+        navigate("/customers");
+      }
 
       // Ctrl+F: Product Catalog (Global Navigate)
       if (e.ctrlKey && e.key === "f") {

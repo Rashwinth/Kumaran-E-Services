@@ -8,6 +8,7 @@ import {
 import axios from "axios";
 import { API_ENDPOINTS } from "../config/api";
 import { useAuth } from "./AuthContext";
+import { getCache, setCache, CACHE_KEYS, TTL } from "../utils/cacheUtils";
 
 const BillingContext = createContext();
 
@@ -20,44 +21,37 @@ export const useBilling = () => {
 };
 
 export const BillingProvider = ({ children }) => {
-  const { accessToken, user } = useAuth();
+  const { accessToken } = useAuth();
 
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [lastFetch, setLastFetch] = useState({ products: 0, customers: 0 });
-
-  // Cache duration: 5 minutes
-  const CACHE_DURATION = 5 * 60 * 1000;
 
   const fetchProducts = useCallback(
     async (force = false) => {
       if (!accessToken) return;
 
-      // Check cache
-      const now = Date.now();
-      if (
-        !force &&
-        now - lastFetch.products < CACHE_DURATION &&
-        products.length > 0
-      ) {
-        return;
-      }
-
       try {
         setLoading(true);
+
+        if (!force) {
+          const cached = getCache(CACHE_KEYS.PRODUCTS_FLAT);
+          if (cached) {
+            setProducts(cached);
+          }
+        }
+
         const res = await axios.get(API_ENDPOINTS.BRANCH_INVENTORY, {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (res.data.success) {
-          // Map inventory items to a flatter product structure for easier billing use
           const mappedProducts = res.data.data
-            .filter((item) => item.product) // Safety: ensure product exists
+            .filter((item) => item.product)
             .map((item) => ({
               _id: item.product._id,
               name: item.product.name,
               sku: item.product.sku,
-              price: item.FinalPrice, // Selling price
+              price: item.FinalPrice,
               mrp: item.product.mrp,
               costPrice: item.costPrice,
               sellingPrice: item.sellingPrice,
@@ -71,7 +65,7 @@ export const BillingProvider = ({ children }) => {
               unit: item.product.unit || "pcs",
             }));
           setProducts(mappedProducts);
-          setLastFetch((prev) => ({ ...prev, products: now }));
+          setCache(CACHE_KEYS.PRODUCTS_FLAT, mappedProducts, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -79,47 +73,37 @@ export const BillingProvider = ({ children }) => {
         setLoading(false);
       }
     },
-    [
-      accessToken,
-      lastFetch.products,
-      products.length,
-      user?.branchCode,
-      CACHE_DURATION,
-    ]
+    [accessToken]
   );
 
   const fetchCustomers = useCallback(
     async (force = false) => {
       if (!accessToken) return;
 
-      const now = Date.now();
-      if (
-        !force &&
-        now - lastFetch.customers < CACHE_DURATION &&
-        customers.length > 0
-      ) {
-        return;
-      }
-
       try {
+        setLoading(true);
+
+        if (!force) {
+          const cached = getCache(CACHE_KEYS.CUSTOMERS);
+          if (cached) {
+            setCustomers(cached);
+          }
+        }
+
         const res = await axios.get(API_ENDPOINTS.CUSTOMERS + "/my-branch", {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (res.data.success) {
           setCustomers(res.data.data);
-          setLastFetch((prev) => ({ ...prev, customers: now }));
+          setCache(CACHE_KEYS.CUSTOMERS, res.data.data, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching customers:", error);
+      } finally {
+        setLoading(false);
       }
     },
-    [
-      accessToken,
-      lastFetch.customers,
-      customers.length,
-      user?.branchCode,
-      CACHE_DURATION,
-    ]
+    [accessToken]
   );
 
   // Periodic refresh

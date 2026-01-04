@@ -1,6 +1,6 @@
 const Branch = require("../models/Branch");
 const bcrypt = require("bcryptjs");
-
+ 
 /**
  * @desc    Verify branch code and access code
  * @route   POST /api/branches/verify

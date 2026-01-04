@@ -2,14 +2,8 @@ import { createContext, useContext, useState, useCallback } from "react";
 import axios from "axios";
 import { toast } from "react-toastify";
 import { useAuth } from "./AuthContext";
-import {
-  setCache,
-  getCache,
-  removeCache,
-  CACHE_KEYS,
-  TTL,
-} from "../utils/cacheUtils";
 import { getDecrypted } from "../utils/storage";
+import { getCache, setCache, CACHE_KEYS, TTL } from "../utils/cacheUtils";
 
 const ProductContext = createContext();
 
@@ -24,7 +18,7 @@ export const ProductProvider = ({ children }) => {
   const [products, setProducts] = useState([]);
   const [categories, setCategories] = useState([]);
   const [subCategories, setSubCategories] = useState([]);
-  const [productsLoading, setProductsLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   const baseURL = `${import.meta.env.VITE_BACKEND_BASE_URI}/api/staff`;
   const { accessToken } = useAuth();
@@ -34,18 +28,19 @@ export const ProductProvider = ({ children }) => {
   // Fetch all products
   const getProducts = useCallback(
     async (forceRefresh = false) => {
-      if (!accessToken || !BranchId) return;
+      if (!accessToken || !BranchId) {
+        setLoading(false);
+        return;
+      }
 
       try {
-        setProductsLoading(true);
+        setLoading(true);
 
-        // Check cache first
+        // UI Speed-up: serve from cache if available
         if (!forceRefresh) {
-          const cachedProducts = await getCache(CACHE_KEYS.PRODUCTS);
-          if (cachedProducts) {
-            setProducts(cachedProducts);
-            setProductsLoading(false);
-            return;
+          const cached = getCache(CACHE_KEYS.INVENTORY_RAW);
+          if (cached) {
+            setProducts(cached);
           }
         }
 
@@ -55,8 +50,7 @@ export const ProductProvider = ({ children }) => {
 
         if (response.data.success) {
           setProducts(response.data.data);
-          // Cache the result
-          await setCache(CACHE_KEYS.PRODUCTS, response.data.data, TTL.SHORT); // Products might change more often, short TTL
+          setCache(CACHE_KEYS.INVENTORY_RAW, response.data.data, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -64,7 +58,7 @@ export const ProductProvider = ({ children }) => {
           error.response?.data?.message || "Failed to fetch products"
         );
       } finally {
-        setProductsLoading(false);
+        setLoading(false);
       }
     },
     [accessToken, baseURL, BranchId]
@@ -76,12 +70,10 @@ export const ProductProvider = ({ children }) => {
       if (!accessToken) return;
 
       try {
-        // Check cache
         if (!forceRefresh) {
-          const cachedCategories = await getCache(CACHE_KEYS.CATEGORIES);
-          if (cachedCategories) {
-            setCategories(cachedCategories);
-            return;
+          const cached = getCache(CACHE_KEYS.CATEGORIES);
+          if (cached) {
+            setCategories(cached);
           }
         }
 
@@ -91,7 +83,7 @@ export const ProductProvider = ({ children }) => {
 
         if (response.data.success) {
           setCategories(response.data.data);
-          await setCache(CACHE_KEYS.CATEGORIES, response.data.data, TTL.LONG); // Categories rarely change
+          setCache(CACHE_KEYS.CATEGORIES, response.data.data, TTL.LONG);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -106,10 +98,9 @@ export const ProductProvider = ({ children }) => {
       if (!accessToken) return;
       try {
         if (!forceRefresh) {
-          const cached = await getCache(CACHE_KEYS.SUBCATEGORIES);
+          const cached = getCache(CACHE_KEYS.SUBCATEGORIES);
           if (cached) {
             setSubCategories(cached);
-            return;
           }
         }
 
@@ -118,11 +109,7 @@ export const ProductProvider = ({ children }) => {
         });
         if (response.data.success) {
           setSubCategories(response.data.data);
-          await setCache(
-            CACHE_KEYS.SUBCATEGORIES,
-            response.data.data,
-            TTL.LONG
-          );
+          setCache(CACHE_KEYS.SUBCATEGORIES, response.data.data, TTL.LONG);
         }
       } catch (error) {
         console.error("Error fetching subcategories", error);
@@ -130,6 +117,7 @@ export const ProductProvider = ({ children }) => {
     },
     [accessToken, baseURL]
   );
+
   const getSubCategoriesByCategory = async (categoryId) => {
     if (!accessToken) return [];
 
@@ -157,7 +145,7 @@ export const ProductProvider = ({ children }) => {
         products,
         categories,
         subCategories,
-        productsLoading,
+        loading,
         getProducts,
         getCategories,
         getSubCategories,

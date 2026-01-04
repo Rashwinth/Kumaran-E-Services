@@ -24,18 +24,25 @@ const SidebarNav = () => {
       path: "/product-catalog",
     },
     {
+      id: "customer",
+      label: "Customer",
+      faicon: "cent-sign",
+      path: "/customers",
+    },
+    {
       id: "investors",
       label: "Investors",
       icon: "bi-briefcase",
       path: "/investors",
     },
+
     {
       id: "sale-history",
       label: "Sale History",
       icon: "bi-graph-up",
       path: "/sale-history",
     },
-        {
+    {
       id: "settings",
       label: "Settings",
       icon: "bi-gear-wide-connected",
@@ -156,9 +163,11 @@ const SidebarNav = () => {
                       style={{ width: "64px", minWidth: "64px", flexShrink: 0 }}
                     >
                       <i
-                        className={`bi ${item.icon} ${
-                          isActive ? "fs-4" : "fs-5"
-                        }`}
+                        className={`${
+                          item.icon
+                            ? `bi ${item.icon}`
+                            : `fa-solid fa-${item.faicon}`
+                        } ${isActive ? "fs-4" : "fs-5"}`}
                       ></i>
                     </div>
 

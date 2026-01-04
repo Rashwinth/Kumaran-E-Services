@@ -6,12 +6,12 @@ import { useBilling } from "../../Context/BillingContext";
 import axios from "axios";
 import { API_ENDPOINTS } from "../../config/api";
 import { toast } from "react-toastify";
-import LoadingPage from "../../Components/Loading/LoadingPage";
+import Loader from "../../Components/Loading/universalLoader";
 import ProductSearch from "../../Components/Billing/ProductSearch";
 import CustomerSearch from "../../Components/Billing/CustomerSearch";
 import CustomerModal from "../../Components/Billing/CustomerModal";
-import { removeCache, CACHE_KEYS } from "../../utils/cacheUtils";
 import { useNavigate } from "react-router-dom";
+import { removeCache, CACHE_KEYS } from "../../utils/cacheUtils";
 import ShortcutGuide from "../../Components/Navigation/ShortcutGuide";
 import { getDecrypted, saveEncrypted } from "../../utils/storage";
 
@@ -356,8 +356,8 @@ const ProductBilling = () => {
         }
 
         // Clear browser cache for products and inventory to ensure consistency
-        await removeCache(CACHE_KEYS.PRODUCTS);
-        await removeCache(CACHE_KEYS.INVENTORY);
+        removeCache(CACHE_KEYS.INVENTORY_RAW);
+        removeCache(CACHE_KEYS.PRODUCTS_FLAT);
 
         // Refresh accounts and inventory to show updated balances/stock
         await fetchAccounts();
@@ -473,7 +473,7 @@ const ProductBilling = () => {
   ]);
 
   if (billingLoading && allProducts.length === 0) {
-    return <LoadingPage />;
+    return <Loader message="Loading billing data..." />;
   }
 
   return (

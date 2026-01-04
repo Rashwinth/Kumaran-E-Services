@@ -6,6 +6,7 @@ const {
   getMyBranchCustomers,
   upsertCustomer,
   searchByPhone,
+  settleCustomerCredit,
 } = require("../controller/customerController");
 const {
   getInventoryByBranchStaff,
@@ -34,6 +35,11 @@ router.post(
 router.get("/customers/my-branch", protect, getMyBranchCustomers);
 router.post("/customers", protect, upsertCustomer);
 router.get("/customers/search/:phone", protect, searchByPhone);
+router.post(
+  "/customers/:customerId/settle-credit",
+  protect,
+  settleCustomerCredit
+);
 
 //get brabch products
 router.get("/products/:BranchId", protect, GetProdctBYBranch);
