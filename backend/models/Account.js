@@ -69,4 +69,5 @@ accountSchema.pre("validate", function () {
   }
 });
 
-module.exports = mongoose.model("accounts", accountSchema);
+module.exports =
+  mongoose.models.Account || mongoose.model("Account", accountSchema);

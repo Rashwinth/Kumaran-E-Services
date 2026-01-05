@@ -1,13 +1,13 @@
 const express = require("express");
 const router = express.Router();
 const { createSale, getSales } = require("../controller/SalesController");
-const { getMyBranchAccounts } = require("../controller/accountController");
+const { getMyBranchAccounts, closeAccount } = require("../controller/AccountController");
 const {
   getMyBranchCustomers,
   upsertCustomer,
   searchByPhone,
   settleCustomerCredit,
-} = require("../controller/customerController");
+} = require("../controller/CustomerController");
 const {
   getInventoryByBranchStaff,
 } = require("../controller/InventoryController");
@@ -28,7 +28,7 @@ router.get("/accounts/my-branch", protect, getMyBranchAccounts);
 router.post(
   "/accounts/:id/close",
   protect,
-  require("../controller/accountController").closeAccount
+closeAccount
 );
 
 // Customer routes for staff

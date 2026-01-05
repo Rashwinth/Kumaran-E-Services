@@ -50,4 +50,5 @@ const inventorySchema = new mongoose.Schema(
 // Ensure unique combination of product and branch
 inventorySchema.index({ product: 1, branch: 1 }, { unique: true });
 
-module.exports = mongoose.model("Inventory", inventorySchema);
+module.exports =
+  mongoose.models.Inventory || mongoose.model("Inventory", inventorySchema);

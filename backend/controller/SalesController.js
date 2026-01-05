@@ -1,9 +1,9 @@
 const mongoose = require("mongoose");
 const Sale = require("../models/Sale");
-const Account = require("../models/Accounts");
+const Account = require("../models/Account");
 const Branch = require("../models/Branch");
 const Inventory = require("../models/Inventory");
-const Customer = require("../models/customerModel");
+const Customer = require("../models/Customer");
 
 // @desc    Create new sale (Daily Storage version)
 // @route   POST /api/sales
@@ -121,7 +121,7 @@ exports.createSale = async (req, res) => {
     }
 
     // 4. Update Account Balance & Daily Session
-    const { ensureDailySession } = require("./accountController");
+    const { ensureDailySession } = require("./AccountController");
     const sessionDetail = await ensureDailySession(paymentMethod, session);
 
     if (!sessionDetail) {
@@ -221,22 +221,41 @@ exports.getSales = async (req, res) => {
     const query = req.user.role === "admin" ? {} : { branch: branch._id };
 
     const dailyRecords = await Sale.find(query)
-      .populate("sales.paymentMethod", "type upiAccountName")
+      .populate({
+        path: "sales.paymentMethod",
+        model: "Account",
+        select: "type upiAccountName",
+      })
       .populate("sales.staff", "name")
       .populate("sales.customer", "name phone city")
       .populate("sales.items.product", "name sku")
       .sort({ date: -1 });
 
     const flattenedSales = dailyRecords.reduce((acc, record) => {
-      const salesWithMeta = record.sales.map((s) => ({
-        ...s.toObject(),
-        branchId: record.branch,
-        _id: s._id,
-      }));
+      // Ensure sales array exists
+      if (!record.sales || !Array.isArray(record.sales)) return acc;
+
+      const salesWithMeta = record.sales
+        .filter((s) => s) // Ensure no nulls in array
+        .map((s) => {
+          // Handle case if s is already a plain object
+          const saleObj = typeof s.toObject === "function" ? s.toObject() : s;
+          return {
+            ...saleObj,
+            branchId: record.branch,
+            dateStr: record.date, // YYYY-MM-DD from parent record
+            _id: s._id,
+          };
+        });
       return acc.concat(salesWithMeta);
     }, []);
 
-    flattenedSales.sort((a, b) => b.createdAt - a.createdAt);
+    // Safe sorting with Date parsing
+    flattenedSales.sort((a, b) => {
+      const dateA = new Date(a.createdAt || 0);
+      const dateB = new Date(b.createdAt || 0);
+      return dateB - dateA;
+    });
 
     res.status(200).json({
       success: true,
@@ -248,6 +267,8 @@ exports.getSales = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Server error while fetching sales",
+      error: error.message,
+      stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
     });
   }
 };

@@ -23,7 +23,7 @@ const {
   updateAccount,
   deleteAccount,
   addBalanceHistory,
-} = require("../controller/accountController");
+} = require("../controller/AccountController");
 const {
   getAllProducts,
   getProductById,
@@ -49,6 +49,14 @@ const {
 router.get("/", (req, res) => {
   res.send("Backend is running");
 });
+
+// Protected routes - dashboard
+router.get(
+  "/dashboard/stats",
+  protect,
+  authorize("admin", "manager"),
+  require("../controller/DashboardController").getDashboardStats
+);
 
 // Protected routes - Employee Management
 router.post(
@@ -117,7 +125,7 @@ router.post(
   "/accounts/:id/close",
   protect,
   authorize("admin", "manager", "staff"),
-  require("../controller/accountController").closeAccount
+  require("../controller/AccountController").closeAccount
 );
 
 // Protected routes - Product Management
@@ -127,6 +135,14 @@ router.get(
   protect,
   authorize("admin", "manager"),
   getProductById
+);
+
+// Protected routes - Sales and Reports
+router.get(
+  "/sales",
+  protect,
+  authorize("admin", "manager"),
+  require("../controller/SalesController").getSales
 );
 router.post("/products", protect, authorize("admin"), createProduct);
 router.put("/products/:id", protect, authorize("admin"), updateProduct);

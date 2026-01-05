@@ -17,8 +17,8 @@ import Branch from "./Pages/Branch/Branch";
 import BranchDetail from "./Pages/Branch/BranchDetail";
 import Products from "./Pages/Products";
 
-// Context
-
+// Components
+import SidebarNav from "./Components/Navigation/SidebarNav";
 import LoadingPage from "./Components/Loading/LoadingPage";
 import Header from "./Components/Header";
 import Footer from "./Components/Footer";
@@ -33,20 +33,31 @@ import BranchAccountDetail from "./Pages/Branch/BranchAccountDetail";
 // Protected Route Component (fixed)
 
 import ScrollToTop from "./Components/ScrollToTop";
+import Reports from "./Pages/Reports";
+import BranchReport from "./Pages/Branch/BranchReport";
 
-// Layout wrapper to conditionally show Header
+// Layout wrapper to conditionally show Header and Sidebar
 const Layout = ({ children }) => {
   const location = useLocation();
   const noHeaderRoutes = ["/", "/login", "/register"];
 
   const hideHeader = noHeaderRoutes.includes(location.pathname);
 
+  if (hideHeader) {
+    return <div className="main-content">{children}</div>;
+  }
+
   return (
-    <>
-      {!hideHeader && <Header />}
-      <div className="main-content">{children}</div>
-      {!hideHeader && <Footer />}
-    </>
+    <div className="app-container">
+      <div className="app-main-layout">
+        <SidebarNav />
+        <div className="main-content-area">
+          <Header />
+          <div className="content-viewport">{children}</div>
+          <Footer />
+        </div>
+      </div>
+    </div>
   );
 };
 
@@ -73,9 +84,13 @@ function AppContent() {
             {/* Employee route */}
             <Route path="/branch/:id/employee" element={<Employee />} />
 
+            {/* Report route */}
+            <Route path="/branch/:id/report" element={<BranchReport />} />
+
             {/* product Route */}
             <Route path="/products" element={<Products />} />
             <Route path="/branch/:id/products" element={<BranchProducts />} />
+            <Route path="/report" element={<Reports />} />
 
             {/* Accounts Route */}
             <Route

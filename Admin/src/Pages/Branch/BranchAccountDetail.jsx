@@ -6,6 +6,162 @@ import "../../Styles/BranchAccount.css";
 import { toast } from "react-toastify";
 import UniversalDelete from "../../Modals/UniversalDelete";
 import BackButton from "../../Components/BackButton";
+import MonthYearFilter from "../../Components/MonthYearFilter";
+
+const ITEMS_PER_PAGE = 10;
+
+const PaginatedHistoryTable = ({
+  history,
+  accountName,
+  isAggregated = false,
+  filterMonth,
+  filterYear,
+}) => {
+  const [currentPage, setCurrentPage] = useState(1);
+
+  // Reset page when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [filterMonth, filterYear]);
+
+  // Filter History
+  const filteredHistory = history.filter((item) => {
+    const itemDate = new Date(item.date);
+    const m = itemDate.getMonth();
+    const y = itemDate.getFullYear();
+
+    const monthMatch = filterMonth === -1 || m === filterMonth;
+    const yearMatch = filterYear === -1 || y === filterYear;
+
+    return monthMatch && yearMatch;
+  });
+
+  // Pagination Logic
+  const totalPages = Math.ceil(filteredHistory.length / ITEMS_PER_PAGE);
+  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+  const paginatedData = filteredHistory.slice(
+    startIndex,
+    startIndex + ITEMS_PER_PAGE
+  );
+
+  const formatCurrency = (amount) => {
+    return new Intl.NumberFormat("en-IN", {
+      style: "currency",
+      currency: "INR",
+      maximumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  const formatDate = (dateString) => {
+    return new Date(dateString).toLocaleDateString("en-IN", {
+      day: "2-digit",
+      month: "short",
+      year: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  };
+
+  return (
+    <div className="history-table-container">
+      <table className="history-table">
+        <thead>
+          <tr>
+            <th>Date</th>
+            {isAggregated ? <th>Account</th> : <th>Particulars</th>}
+            <th>Opening</th>
+            <th>Closing</th>
+          </tr>
+        </thead>
+        <tbody>
+          {paginatedData.length > 0 ? (
+            paginatedData.map((item, idx) => (
+              <tr key={idx}>
+                <td className="td-date">
+                  <i className="bi bi-calendar3"></i> {formatDate(item.date)}
+                </td>
+                <td className="td-account">
+                  <span className="account-tag">
+                    {item.accountName || accountName || "Account"}
+                  </span>
+                </td>
+                <td className="td-amount dim">
+                  {formatCurrency(item.openingBalance || 0)}
+                </td>
+                <td className="td-amount bold">
+                  {formatCurrency(
+                    item.isClosed
+                      ? item.closingBalance
+                      : item.expectedClosingBalance || 0
+                  )}
+                </td>
+              </tr>
+            ))
+          ) : (
+            <tr>
+              <td colSpan="4" className="text-center p-4">
+                No history available for the selected period
+              </td>
+            </tr>
+          )}
+        </tbody>
+      </table>
+
+      {totalPages > 1 && (
+        <div
+          className="pagination-controls"
+          style={{
+            display: "flex",
+            justifyContent: "flex-end",
+            padding: "1rem",
+            gap: "0.5rem",
+            alignItems: "center",
+          }}
+        >
+          <button
+            className="btn-icon"
+            onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+            disabled={currentPage === 1}
+            style={{
+              opacity: currentPage === 1 ? 0.5 : 1,
+              background: "transparent",
+              border: "1px solid #ccc",
+              color: "#6c757d",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <i className="bi bi-chevron-left"></i>
+          </button>
+          <span style={{ color: "#6c757d", fontSize: "0.9rem" }}>
+            Page {currentPage} of {totalPages}
+          </span>
+          <button
+            className="btn-icon"
+            onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+            disabled={currentPage === totalPages}
+            style={{
+              opacity: currentPage === totalPages ? 0.5 : 1,
+              background: "transparent",
+              border: "1px solid #ccc",
+              color: "#6c757d",
+              width: "32px",
+              height: "32px",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+            }}
+          >
+            <i className="bi bi-chevron-right"></i>
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
 
 const BranchAccountDetail = () => {
   const { id } = useParams();
@@ -29,6 +185,10 @@ const BranchAccountDetail = () => {
   const [editingAccount, setEditingAccount] = useState(null);
   const [currentBranch, setCurrentBranch] = useState(null);
   const [activeTab, setActiveTab] = useState("Upi"); // Upi, Cash, Credits
+
+  // Filter State
+  const [selectedMonth, setSelectedMonth] = useState(new Date().getMonth());
+  const [selectedYear, setSelectedYear] = useState(new Date().getFullYear());
 
   // Form State
   const [formData, setFormData] = useState({
@@ -243,7 +403,7 @@ const BranchAccountDetail = () => {
             <i className="bi bi-credit-card-fill"></i>
           </div>
           <div className="stat-content">
-            <span className="stat-label">Outstanding Credits</span>
+            <span className="stat-label"> Credits</span>
             <span className="stat-value">
               {formatCurrency(calculateTotalByType("Credits"))}
             </span>
@@ -326,6 +486,16 @@ const BranchAccountDetail = () => {
         <div className="history-section">
           <div className="section-header-row">
             <h3>Transaction History ({activeTab})</h3>
+            <MonthYearFilter
+              selectedMonth={selectedMonth}
+              selectedYear={selectedYear}
+              onMonthChange={setSelectedMonth}
+              onYearChange={setSelectedYear}
+              onReset={() => {
+                setSelectedMonth(new Date().getMonth());
+                setSelectedYear(new Date().getFullYear());
+              }}
+            />
           </div>
 
           <div className="history-content">
@@ -339,107 +509,33 @@ const BranchAccountDetail = () => {
                     <div className="provider-header">
                       <h4>{account.upiAccountName}</h4>
                     </div>
-                    <div className="history-table-container">
-                      <table className="history-table">
-                        <thead>
-                          <tr>
-                            <th>Date</th>
-                            <th>Particulars</th>
-                            <th>Opening</th>
-                            <th>Closing</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {(account.balanceHistory || [])
-                            .sort((a, b) => new Date(b.date) - new Date(a.date))
-                            .map((item, idx) => (
-                              <tr key={idx}>
-                                <td className="td-date">
-                                  <i className="bi bi-calendar3"></i>{" "}
-                                  {formatDate(item.date)}
-                                </td>
-                                <td className="td-account">
-                                  <span className="account-tag">
-                                    {account.upiAccountName}
-                                  </span>
-                                </td>
-                                <td className="td-amount dim">
-                                  {formatCurrency(item.openingBalance || 0)}
-                                </td>
-                                <td className="td-amount bold">
-                                  {formatCurrency(
-                                    item.isClosed
-                                      ? item.closingBalance
-                                      : item.expectedClosingBalance || 0
-                                  )}
-                                </td>
-                              </tr>
-                            ))}
-                          {account.balanceHistory.length === 0 && (
-                            <tr>
-                              <td colSpan="4" className="text-center p-4">
-                                No history available
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
+                    <PaginatedHistoryTable
+                      history={account.balanceHistory || []}
+                      accountName={account.upiAccountName}
+                      filterMonth={selectedMonth}
+                      filterYear={selectedYear}
+                    />
                   </div>
                 ))
               )
             ) : (
               // Aggregated for Cash/Credits
               <div className="history-table-container">
-                <table className="history-table">
-                  <thead>
-                    <tr>
-                      <th>Date</th>
-                      <th>Account</th>
-                      <th>Opening</th>
-                      <th>Closing</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {filteredAccounts
-                      .flatMap((acc) =>
-                        (acc.balanceHistory || []).map((h) => ({
-                          ...h,
-                          accountName:
-                            acc.upiAccountName || `${acc.type} Account`,
-                          accountId: acc._id,
-                        }))
-                      )
-                      .sort((a, b) => new Date(b.date) - new Date(a.date))
-                      .map((item, idx) => (
-                        <tr key={idx}>
-                          <td className="td-date">
-                            <i className="bi bi-calendar3"></i>{" "}
-                            {formatDate(item.date)}
-                          </td>
-                          <td className="td-account">
-                            <span className="account-tag">
-                              {item.accountName}
-                            </span>
-                          </td>
-                          <td className="td-amount dim">
-                            {formatCurrency(item.openingBalance)}
-                          </td>
-                          <td className="td-amount bold">
-                            {formatCurrency(item.closingBalance)}
-                          </td>
-                        </tr>
-                      ))}
-                    {filteredAccounts.flatMap((acc) => acc.balanceHistory)
-                      .length === 0 && (
-                      <tr>
-                        <td colSpan="4" className="text-center p-4">
-                          No filtered history available
-                        </td>
-                      </tr>
-                    )}
-                  </tbody>
-                </table>
+                <PaginatedHistoryTable
+                  history={filteredAccounts
+                    .flatMap((acc) =>
+                      (acc.balanceHistory || []).map((h) => ({
+                        ...h,
+                        accountName:
+                          acc.upiAccountName || `${acc.type} Account`,
+                        accountId: acc._id,
+                      }))
+                    )
+                    .sort((a, b) => new Date(b.date) - new Date(a.date))}
+                  isAggregated={true}
+                  filterMonth={selectedMonth}
+                  filterYear={selectedYear}
+                />
               </div>
             )}
           </div>

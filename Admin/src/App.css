@@ -40,3 +40,61 @@
 .read-the-docs {
   color: #888;
 } */
+
+.app-container {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+}
+
+.app-main-layout {
+  display: flex;
+  flex: 1; /* This takes up all remaining space between header and footer */
+  overflow: hidden;
+}
+
+.main-content-area {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  background-color: #f8fafc;
+}
+
+.content-viewport {
+  padding: 0;
+  flex: 1;
+}
+
+/* Sidebar behavior inside the middle section */
+.sidebar-nav {
+  position: relative !important;
+  height: 100% !important;
+  z-index: 5; /* Lower than header/footer */
+}
+
+.sidebar-nav.closed {
+  width: 80px !important;
+}
+
+.sidebar-nav.open {
+  width: 280px !important;
+}
+
+.nav-label-text {
+  display: inline-block !important;
+  visibility: visible !important;
+  color: white !important;
+  font-weight: inherit;
+}
+
+@media (max-width: 768px) {
+  .main-wrapper {
+    margin-left: 0;
+  }
+
+  .sidebar-nav.closed ~ .main-wrapper {
+    margin-left: 0;
+  }
+}

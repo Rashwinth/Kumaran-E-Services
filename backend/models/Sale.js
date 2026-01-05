@@ -90,17 +90,19 @@ const saleSchema = new Schema(
 
 saleSchema.index({ date: 1, branch: 1 }, { unique: true });
 
-const SaleModel = mongoose.model("Sale", saleSchema);
+const SaleModel = mongoose.models.Sale || mongoose.model("Sale", saleSchema);
 
 // Cleanup legacy index that causes E11000 errors on top-level billNumber
-SaleModel.collection
-  .dropIndex("billNumber_1")
-  .then(() => console.log("Successfully dropped legacy billNumber_1 index"))
-  .catch((err) => {
-    // Index might not exist, which is fine
-    if (err.code !== 27) {
-      console.log("Note regarding billNumber_1 index:", err.message);
-    }
-  });
+if (SaleModel.collection) {
+  SaleModel.collection
+    .dropIndex("billNumber_1")
+    .then(() => console.log("Successfully dropped legacy billNumber_1 index"))
+    .catch((err) => {
+      // Index might not exist, which is fine
+      if (err.code !== 27) {
+        console.log("Note regarding billNumber_1 index:", err.message);
+      }
+    });
+}
 
 module.exports = SaleModel;

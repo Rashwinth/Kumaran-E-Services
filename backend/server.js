@@ -3,16 +3,16 @@ const dotenv = require("dotenv");
 const cors = require("cors");
 const cookieParser = require("cookie-parser");
 const connectDB = require("./database/db");
-const { default: mongoose } = require("mongoose");
+const mongoose = require("mongoose");
 
 dotenv.config();
 connectDB();
 
 const app = express();
 
-const authRoutes = require("./routes/authRoutes");
+const authRoutes = require("./routes/AuthRoutes");
 const Adminrouter = require("./routes/AdminRoutes");
-const SalesRouter = require("./routes/StaffRoute");
+const SalesRouter = require("./routes/StaffRoutes");
 
 // Middleware
 app.use(express.json());

@@ -1,4 +1,4 @@
-const Account = require("../models/Accounts");
+const Account = require("../models/Account");
 
 // @desc    Get all accounts
 // @route   GET /admin/accounts
@@ -49,7 +49,6 @@ exports.getAllAccounts = async (req, res) => {
 // @access  Private (Admin/Manager)
 exports.getAccountsByBranch = async (req, res) => {
   try {
-
     const { branchId } = req.params;
     const accounts = await Account.find({ branch: branchId }).populate(
       "branch",
@@ -98,7 +97,6 @@ exports.getAccountsByBranch = async (req, res) => {
 // @access  Private (Admin/Manager)
 exports.getAccountById = async (req, res) => {
   try {
-    
     let account = await Account.findById(req.params.id).populate(
       "branch",
       "name code"
@@ -494,7 +492,7 @@ exports.closeAccount = async (req, res) => {
 
 // Internal Helper to ensure daily session is open
 exports.ensureDailySession = async (accountId, session = null) => {
-  const Account = require("../models/Accounts"); // Ensure model is available
+  const Account = require("../models/Account"); // Ensure model is available
   const account = await Account.findById(accountId).session(session);
   if (!account) return null;
 

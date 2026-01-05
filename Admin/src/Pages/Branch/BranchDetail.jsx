@@ -184,6 +184,9 @@ const BranchDetail = () => {
               >
                 <i className="bi bi-bank2"></i> Accounts
               </Link>
+              <Link to={`/branch/${id}/report`} className="add-report-button">
+                <i className="bi bi-file-earmark-bar-graph"></i> Reports
+              </Link>
             </>
           )}
         </div>

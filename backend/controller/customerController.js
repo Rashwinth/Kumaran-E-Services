@@ -1,9 +1,9 @@
-const Customer = require("../models/customerModel");
-const Branch = require("../models/Branch.js");
-const Account = require("../models/Accounts");
+const Customer = require("../models/Customer");
+const Branch = require("../models/Branch");
+const Account = require("../models/Account");
 const Sale = require("../models/Sale");
 const mongoose = require("mongoose");
-const { ensureDailySession } = require("./accountController");
+const { ensureDailySession } = require("./AccountController");
 
 // @desc    Get all customers for a branch
 // @route   GET /api/customers/my-branch

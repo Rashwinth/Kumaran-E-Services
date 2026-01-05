@@ -6,7 +6,7 @@ const {
   logout,
   getMe,
   updatePassword,
-} = require("../controller/authController");
+} = require("../controller/AuthController");
 const { verifyBranch } = require("../controller/PublicBranchController");
 const { protect } = require("../middleware/auth");
 
