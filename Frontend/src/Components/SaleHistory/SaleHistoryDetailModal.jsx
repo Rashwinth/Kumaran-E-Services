@@ -1,6 +1,11 @@
 import React from "react";
 
-const SaleHistoryDetailModal = ({ isOpen, onClose, sale }) => {
+const SaleHistoryDetailModal = ({
+  isOpen,
+  onClose,
+  sale,
+  currencySymbol = "₹",
+}) => {
   React.useEffect(() => {
     const handleKeyDown = (e) => {
       if (e.key === "Escape") {
@@ -50,7 +55,7 @@ const SaleHistoryDetailModal = ({ isOpen, onClose, sale }) => {
           <div>
             <h5 className="mb-0 fw-bold text-dark">Transaction Details</h5>
             <small className="text-muted">
-              {sale.billNo} • {sale.date} {sale.time}
+              {sale.billNo} • {sale.formattedDate} {sale.time}
             </small>
           </div>
           <button onClick={onClose} className="btn btn-close"></button>
@@ -144,10 +149,12 @@ const SaleHistoryDetailModal = ({ isOpen, onClose, sale }) => {
                       </td>
                       <td className="text-center align-middle">{item.qty}</td>
                       <td className="text-end align-middle">
-                        ₹{item.price.toFixed(2)}
+                        {currencySymbol}
+                        {item.price.toFixed(2)}
                       </td>
                       <td className="text-end align-middle fw-bold">
-                        ₹{(item.price * item.qty).toFixed(2)}
+                        {currencySymbol}
+                        {(item.lineTotal || item.price * item.qty).toFixed(2)}
                       </td>
                     </tr>
                   ))
@@ -169,17 +176,42 @@ const SaleHistoryDetailModal = ({ isOpen, onClose, sale }) => {
           <div className="d-flex justify-content-end">
             <div style={{ width: "250px" }}>
               <div className="d-flex justify-content-between mb-1">
-                <small className="text-muted">Subtotal:</small>
-                <small className="fw-bold">₹{sale.amount.toFixed(2)}</small>
+                <small className="text-muted">Taxable Value:</small>
+                <small className="fw-bold">
+                  {currencySymbol}
+                  {((sale.amount || 0) - (sale.totalTax || 0)).toFixed(2)}
+                </small>
               </div>
-              <div className="d-flex justify-content-between mb-1">
-                <small className="text-muted">Tax:</small>
-                <small className="fw-bold">₹0.00</small>
+              {sale.cgstTotal > 0 && (
+                <div className="d-flex justify-content-between mb-1">
+                  <small className="text-muted">CGST:</small>
+                  <small className="fw-bold">
+                    {currencySymbol}
+                    {sale.cgstTotal.toFixed(2)}
+                  </small>
+                </div>
+              )}
+              {sale.sgstTotal > 0 && (
+                <div className="d-flex justify-content-between mb-1">
+                  <small className="text-muted">SGST:</small>
+                  <small className="fw-bold">
+                    {currencySymbol}
+                    {sale.sgstTotal.toFixed(2)}
+                  </small>
+                </div>
+              )}
+              <div className="d-flex justify-content-between mb-1 border-top pt-1">
+                <small className="text-muted">Total GST:</small>
+                <small className="fw-bold">
+                  {currencySymbol}
+                  {sale.totalTax.toFixed(2)}
+                </small>
               </div>
               <div className="d-flex justify-content-between pt-2 border-top mt-2">
                 <span className="fw-bold text-dark">Grand Total:</span>
                 <span className="fw-bold text-primary fs-5">
-                  ₹{sale.amount.toFixed(2)}
+                  {currencySymbol}
+                  {sale.amount.toFixed(2)}
                 </span>
               </div>
             </div>

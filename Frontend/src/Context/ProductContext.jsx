@@ -38,7 +38,7 @@ export const ProductProvider = ({ children }) => {
 
         // UI Speed-up: serve from cache if available
         if (!forceRefresh) {
-          const cached = getCache(CACHE_KEYS.INVENTORY_RAW);
+          const cached = await getCache(CACHE_KEYS.INVENTORY_RAW);
           if (cached) {
             setProducts(cached);
           }
@@ -50,7 +50,11 @@ export const ProductProvider = ({ children }) => {
 
         if (response.data.success) {
           setProducts(response.data.data);
-          setCache(CACHE_KEYS.INVENTORY_RAW, response.data.data, TTL.SHORT);
+          await setCache(
+            CACHE_KEYS.INVENTORY_RAW,
+            response.data.data,
+            TTL.SHORT
+          );
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -71,7 +75,7 @@ export const ProductProvider = ({ children }) => {
 
       try {
         if (!forceRefresh) {
-          const cached = getCache(CACHE_KEYS.CATEGORIES);
+          const cached = await getCache(CACHE_KEYS.CATEGORIES);
           if (cached) {
             setCategories(cached);
           }
@@ -83,7 +87,7 @@ export const ProductProvider = ({ children }) => {
 
         if (response.data.success) {
           setCategories(response.data.data);
-          setCache(CACHE_KEYS.CATEGORIES, response.data.data, TTL.LONG);
+          await setCache(CACHE_KEYS.CATEGORIES, response.data.data, TTL.LONG);
         }
       } catch (error) {
         console.error("Error fetching categories:", error);
@@ -98,7 +102,7 @@ export const ProductProvider = ({ children }) => {
       if (!accessToken) return;
       try {
         if (!forceRefresh) {
-          const cached = getCache(CACHE_KEYS.SUBCATEGORIES);
+          const cached = await getCache(CACHE_KEYS.SUBCATEGORIES);
           if (cached) {
             setSubCategories(cached);
           }
@@ -109,7 +113,11 @@ export const ProductProvider = ({ children }) => {
         });
         if (response.data.success) {
           setSubCategories(response.data.data);
-          setCache(CACHE_KEYS.SUBCATEGORIES, response.data.data, TTL.LONG);
+          await setCache(
+            CACHE_KEYS.SUBCATEGORIES,
+            response.data.data,
+            TTL.LONG
+          );
         }
       } catch (error) {
         console.error("Error fetching subcategories", error);

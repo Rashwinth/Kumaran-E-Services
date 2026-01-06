@@ -25,6 +25,7 @@ export const BillingProvider = ({ children }) => {
 
   const [products, setProducts] = useState([]);
   const [customers, setCustomers] = useState([]);
+  const [sales, setSales] = useState([]);
   const [loading, setLoading] = useState(false);
 
   const fetchProducts = useCallback(
@@ -35,7 +36,7 @@ export const BillingProvider = ({ children }) => {
         setLoading(true);
 
         if (!force) {
-          const cached = getCache(CACHE_KEYS.PRODUCTS_FLAT);
+          const cached = await getCache(CACHE_KEYS.PRODUCTS_FLAT);
           if (cached) {
             setProducts(cached);
           }
@@ -65,7 +66,7 @@ export const BillingProvider = ({ children }) => {
               unit: item.product.unit || "pcs",
             }));
           setProducts(mappedProducts);
-          setCache(CACHE_KEYS.PRODUCTS_FLAT, mappedProducts, TTL.SHORT);
+          await setCache(CACHE_KEYS.PRODUCTS_FLAT, mappedProducts, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching products:", error);
@@ -84,7 +85,7 @@ export const BillingProvider = ({ children }) => {
         setLoading(true);
 
         if (!force) {
-          const cached = getCache(CACHE_KEYS.CUSTOMERS);
+          const cached = await getCache(CACHE_KEYS.CUSTOMERS);
           if (cached) {
             setCustomers(cached);
           }
@@ -95,10 +96,41 @@ export const BillingProvider = ({ children }) => {
         });
         if (res.data.success) {
           setCustomers(res.data.data);
-          setCache(CACHE_KEYS.CUSTOMERS, res.data.data, TTL.SHORT);
+          await setCache(CACHE_KEYS.CUSTOMERS, res.data.data, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching customers:", error);
+      } finally {
+        setLoading(false);
+      }
+    },
+    [accessToken]
+  );
+
+  const fetchSales = useCallback(
+    async (force = false) => {
+      if (!accessToken) return;
+
+      try {
+        setLoading(true);
+
+        if (!force) {
+          const cached = await getCache(CACHE_KEYS.SALES);
+          if (cached) {
+            setSales(cached);
+          }
+        }
+
+        const res = await axios.get(API_ENDPOINTS.SALES, {
+          headers: { Authorization: `Bearer ${accessToken}` },
+        });
+
+        if (res.data.success) {
+          setSales(res.data.data);
+          await setCache(CACHE_KEYS.SALES, res.data.data, TTL.SHORT);
+        }
+      } catch (error) {
+        console.error("Error fetching sales:", error);
       } finally {
         setLoading(false);
       }
@@ -111,15 +143,18 @@ export const BillingProvider = ({ children }) => {
     if (accessToken) {
       fetchProducts();
       fetchCustomers();
+      fetchSales();
     }
-  }, [accessToken, fetchProducts, fetchCustomers]);
+  }, [accessToken, fetchProducts, fetchCustomers, fetchSales]);
 
   const value = {
     products,
     customers,
+    sales,
     loading,
     refreshProducts: () => fetchProducts(true),
     refreshCustomers: () => fetchCustomers(true),
+    refreshSales: () => fetchSales(true),
   };
 
   return (

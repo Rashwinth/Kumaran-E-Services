@@ -1,167 +1,153 @@
-import React, { useState, useMemo } from "react";
+import React, { useState, useMemo, useEffect } from "react";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
 import SaleHistoryStats from "../../Components/SaleHistory/SaleHistoryStats";
 import SaleHistoryFilters from "../../Components/SaleHistory/SaleHistoryFilters";
 import SaleHistoryTable from "../../Components/SaleHistory/SaleHistoryTable";
 import SaleHistoryDetailModal from "../../Components/SaleHistory/SaleHistoryDetailModal";
+import SaleHistoryPagination from "../../Components/SaleHistory/SaleHistoryPagination";
+import { useBilling } from "../../Context/BillingContext";
+import Loader from "../../Components/Loading/universalLoader";
+import { getDecrypted } from "../../utils/storage";
 
-// Hardcoded Mock Data
-const MOCK_DATA = [
-  {
-    id: 1,
-    billNo: "BILL-1001",
-    date: "2024-03-15",
-    time: "10:30 AM",
-    customerName: "Ragu Ram",
-    customerPhone: "9876543210",
-    itemsCount: 3,
-    amount: 1250.0,
-    paymentMode: "Cash",
-    status: "Paid",
-    products: [
-      { name: "Wireless Mouse", sku: "ACC-001", qty: 1, price: 450.0 },
-      { name: "USB Cable 1m", sku: "CAB-003", qty: 2, price: 150.0 },
-      { name: "Screen Cleaner", sku: "ACC-005", qty: 1, price: 500.0 },
-    ],
-  },
-  {
-    id: 2,
-    billNo: "BILL-1002",
-    date: "2026-01-01",
-    time: "11:15 AM",
-    customerName: "Priya Sharma",
-    customerPhone: "8765432109",
-    itemsCount: 5,
-    amount: 2450.5,
-    paymentMode: "UPI",
-    status: "Paid",
-    products: [
-      { name: "Bluetooth Headset", sku: "AUD-101", qty: 1, price: 1200.0 },
-      { name: "Phone Case (iPhone)", sku: "CAS-202", qty: 1, price: 800.0 },
-      { name: "Type-C Adapter", sku: "ADP-303", qty: 3, price: 150.17 },
-    ],
-  },
-  {
-    id: 3,
-    billNo: "BILL-1003",
-    date: "2024-03-14",
-    time: "02:45 PM",
-    customerName: "Walk-in Customer",
-    customerPhone: "N/A",
-    itemsCount: 1,
-    amount: 150.0,
-    paymentMode: "Cash",
-    status: "Paid",
-    products: [
-      { name: "Micro USB Cable", sku: "CAB-001", qty: 1, price: 150.0 },
-    ],
-  },
-  {
-    id: 4,
-    billNo: "BILL-1004",
-    date: "2024-03-14",
-    time: "04:20 PM",
-    customerName: "Senthil Kumar",
-    customerPhone: "9988776655",
-    itemsCount: 8,
-    amount: 5600.0,
-    paymentMode: "Card",
-    status: "Paid",
-    products: [
-      { name: "Mechanical Keyboard", sku: "ACC-009", qty: 1, price: 3500.0 },
-      { name: "Gaming Mouse", sku: "ACC-010", qty: 1, price: 2100.0 },
-    ],
-  },
-  {
-    id: 5,
-    billNo: "BILL-1005",
-    date: "2024-03-13",
-    time: "09:10 AM",
-    customerName: "Anitha Raj",
-    customerPhone: "7766554433",
-    itemsCount: 2,
-    amount: 850.0,
-    paymentMode: "UPI",
-    status: "Cancelled",
-    products: [
-      { name: "Power Bank 10000mAh", sku: "PWR-505", qty: 1, price: 850.0 },
-    ],
-  },
-  {
-    id: 6,
-    billNo: "BILL-1006",
-    date: "2024-03-12",
-    time: "06:30 PM",
-    customerName: "David John",
-    customerPhone: "9080706050",
-    itemsCount: 12,
-    amount: 12400.0,
-    paymentMode: "Credit",
-    status: "Pending",
-    products: [
-      { name: "24-inch Monitor", sku: "DIS-001", qty: 1, price: 11000.0 },
-      { name: "HDMI Cable", sku: "CAB-005", qty: 2, price: 700.0 },
-    ],
-  },
-  {
-    id: 7,
-    billNo: "BILL-1007",
-    date: "2024-03-12",
-    time: "01:20 PM",
-    customerName: "Lakshmi Narayanan",
-    customerPhone: "9123456780",
-    itemsCount: 4,
-    amount: 2100.0,
-    paymentMode: "Cash",
-    status: "Paid",
-    products: [
-      { name: "Router", sku: "NET-001", qty: 1, price: 1800.0 },
-      { name: "LAN Cable 5m", sku: "CAB-101", qty: 2, price: 150.0 },
-    ],
-  },
-  {
-    id: 8,
-    billNo: "BILL-1008",
-    date: "2024-03-11",
-    time: "11:00 AM",
-    customerName: "Mohamed Ali",
-    customerPhone: "8976543210",
-    itemsCount: 6,
-    amount: 3200.0,
-    paymentMode: "UPI",
-    status: "Paid",
-    products: [
-      { name: "External HDD Case", sku: "STO-001", qty: 2, price: 600.0 },
-      { name: "500GB SSD", sku: "STO-005", qty: 1, price: 2600.0 },
-    ],
-  },
-];
+const getCurrencySymbol = (settingValue) => {
+  if (!settingValue) return "₹"; // Default
+  const match = settingValue.match(/\(([^)]+)\)/);
+  return match ? match[1] : settingValue;
+};
+
+const formatDate = (dateStr, format) => {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [y, m, d] = dateStr.split("-");
+  if (format === "DD/MM/YYYY") return `${d}/${m}/${y}`;
+  if (format === "MM/DD/YYYY") return `${m}/${d}/${y}`;
+  return dateStr; // YYYY-MM-DD
+};
 
 const SaleHistory = () => {
+  const { sales, loading: billingLoading, refreshSales } = useBilling();
+
+  const today = new Date().toISOString().split("T")[0];
+  const currentMonth = (new Date().getMonth() + 1).toString();
+  const currentYear = new Date().getFullYear().toString();
+
   const [filters, setFilters] = useState({
     search: "",
-    startDate: "",
-    endDate: "",
+    startDate: today,
+    endDate: today,
     paymentMode: "All",
     status: "All",
     sortBy: "Newest",
+    month: currentMonth,
+    year: currentYear,
   });
 
   const [selectedSale, setSelectedSale] = useState(null);
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [appSettings, setAppSettings] = useState(() =>
+    getDecrypted("app_settings")
+  );
+  const [branchInfo, setBranchInfo] = useState(() => getDecrypted("branch"));
+
+  useEffect(() => {
+    if (!appSettings) {
+      const saved = getDecrypted("app_settings");
+      if (saved) setAppSettings(saved);
+    }
+    if (!branchInfo) {
+      const branch = getDecrypted("branch");
+      if (branch) setBranchInfo(branch);
+    }
+  }, [appSettings, branchInfo]);
+
+  const currencySymbol = useMemo(
+    () => getCurrencySymbol(appSettings?.currency),
+    [appSettings]
+  );
+
+  // Pagination State
+  const [currentPage, setCurrentPage] = useState(1);
+  const pageSize = 10;
+
+  // Map Backend Data to UI Format
+  const mappedSales = useMemo(() => {
+    return sales.map((sale) => {
+      const createdDate = new Date(sale.createdAt);
+      return {
+        id: sale._id,
+        billNo: sale.billNumber,
+        date: createdDate.toISOString().split("T")[0], // Keep for filters
+        formattedDate: formatDate(
+          createdDate.toISOString().split("T")[0],
+          appSettings?.dateFormat || "DD/MM/YYYY"
+        ),
+        time: createdDate.toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        customerName: sale.customer?.name || "Walk-in Customer",
+        customerPhone: sale.customer?.phone || "N/A",
+        itemsCount: sale.items?.length || 0,
+        amount: sale.grandTotal,
+        paymentMode: sale.paymentMethod?.type || "Unknown",
+        status: sale.status === "Completed" ? "Paid" : sale.status,
+        products:
+          sale.items?.map((item) => {
+            const tax = item.taxAmount || 0;
+            // Support legacy records where taxableValue might be missing
+            const taxableValue = item.taxableValue || item.lineTotal - tax;
+            const cgst = Number((tax / 2).toFixed(2));
+            const sgst = Number((tax - cgst).toFixed(2));
+
+            return {
+              name: item.product?.name || "Unknown Product",
+              sku: item.product?.sku || "N/A",
+              qty: item.qty,
+              price: item.price,
+              lineTotal: item.lineTotal,
+              taxAmount: tax,
+              taxableValue: taxableValue,
+              cgst: cgst,
+              sgst: sgst,
+              gstRate: item.product?.gst
+                ? item.product.gst.cgst + item.product.gst.sgst
+                : 0,
+              gstType: item.product?.gstType || "NotIncluded",
+            };
+          }) || [],
+        // Extra info for the detail modal if needed
+        subtotal: sale.subtotal,
+        totalTax: sale.totalTax,
+        cgstTotal: Number((sale.totalTax / 2).toFixed(2)),
+        sgstTotal: Number((sale.totalTax - sale.totalTax / 2).toFixed(2)),
+        discount:
+          sale.items?.reduce((acc, item) => acc + (item.discount || 0), 0) || 0,
+      };
+    });
+  }, [sales, appSettings]);
+
+  const availableYears = useMemo(() => {
+    const years = sales.map((sale) => new Date(sale.createdAt).getFullYear());
+    return [...new Set(years)].sort((a, b) => b - a);
+  }, [sales]);
 
   const handleFilterChange = (key, value) => {
     setFilters((prev) => ({ ...prev, [key]: value }));
+    setCurrentPage(1); // Reset to first page on filter change
   };
 
   const handleReset = () => {
     setFilters({
       search: "",
-      startDate: "",
-      endDate: "",
+      startDate: today,
+      endDate: today,
       paymentMode: "All",
       status: "All",
       sortBy: "Newest",
+      month: currentMonth,
+      year: currentYear,
     });
+    setCurrentPage(1);
   };
 
   const handleViewSale = (sale) => {
@@ -169,61 +155,265 @@ const SaleHistory = () => {
     setIsModalOpen(true);
   };
 
+  const handleExport = async () => {
+    if (filteredData.length === 0) {
+      return alert("No data to export");
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Sales History");
+
+    // Add Branch Info Header
+    if (branchInfo) {
+      const bNameRow = worksheet.addRow([branchInfo.name?.toUpperCase()]);
+      bNameRow.font = { bold: true, size: 18 };
+      worksheet.mergeCells(`A${bNameRow.number}:N${bNameRow.number}`);
+      bNameRow.alignment = { horizontal: "center" };
+
+      const bAddrRow = worksheet.addRow([
+        `${branchInfo.address?.street || ""}, ${
+          branchInfo.address?.city || ""
+        }`,
+      ]);
+      bAddrRow.font = { size: 12 };
+      worksheet.mergeCells(`A${bAddrRow.number}:N${bAddrRow.number}`);
+      bAddrRow.alignment = { horizontal: "center" };
+
+      const bContactRow = worksheet.addRow([
+        `Contact: ${branchInfo.contact?.phone || branchInfo.contact || "N/A"}`,
+      ]);
+      bContactRow.font = { size: 12 };
+      worksheet.mergeCells(`A${bContactRow.number}:N${bContactRow.number}`);
+      bContactRow.alignment = { horizontal: "center" };
+
+      worksheet.addRow([]); // Spacer
+    }
+
+    // Define Base Columns (for width only, we will add headers manually)
+    const columns = [
+      { header: "Bill Number", key: "billNo", width: 25 },
+      { header: "Date", key: "date", width: 15 },
+      { header: "Customer", key: "customerName", width: 20 },
+      { header: "Phone", key: "customerPhone", width: 15 },
+      { header: "Product Code", key: "sku", width: 15 },
+      { header: "Product Name", key: "name", width: 30 },
+      { header: "Qty", key: "qty", width: 10 },
+      { header: "Rate", key: "price", width: 15 },
+      { header: "Taxable Value", key: "taxableValue", width: 15 },
+      { header: "CGST", key: "cgst", width: 12 },
+      { header: "SGST", key: "sgst", width: 12 },
+      { header: "Line Total", key: "lineTotal", width: 18 },
+      { header: "Mode", key: "paymentMode", width: 12 },
+      { header: "Status", key: "status", width: 12 },
+    ];
+    worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
+
+    const addTableSection = (title, data) => {
+      if (data.length === 0) return;
+
+      // Section Title
+      const titleRow = worksheet.addRow([title]);
+      titleRow.font = { bold: true, size: 16, color: { argb: "FF1F4E78" } };
+      worksheet.mergeCells(`A${titleRow.number}:N${titleRow.number}`);
+      titleRow.alignment = { horizontal: "center" };
+      worksheet.addRow([]); // Spacer
+
+      // Header Row
+      const headerRow = worksheet.addRow(columns.map((c) => c.header));
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4F81BD" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+
+      // Data Rows
+      data.forEach((item) => {
+        const row = worksheet.addRow(item);
+        row.font = { size: 13 };
+        // Set Data Font Size
+        row.font = { size: 13 };
+
+        // Style numerical cells
+        [8, 9, 10, 11, 12].forEach((colIndex) => {
+          const cell = row.getCell(colIndex);
+          cell.numFmt = `"${currencySymbol}"#,##0.00`;
+        });
+        // Borders
+        row.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+
+      worksheet.addRow([]); // Grid Spacer
+      worksheet.addRow([]); // Large Spacer
+    };
+
+    // Prepare Data
+    const inclusiveRows = [];
+    const exclusiveRows = [];
+    const nonGstRows = [];
+
+    filteredData.forEach((sale) => {
+      sale.products.forEach((p) => {
+        const rowData = [
+          sale.billNo,
+          sale.formattedDate,
+          sale.customerName,
+          sale.customerPhone,
+          p.sku,
+          p.name,
+          p.qty,
+          p.price,
+          p.taxableValue,
+          p.cgst,
+          p.sgst,
+          p.lineTotal,
+          sale.paymentMode,
+          sale.status,
+        ];
+        if (p.gstType === "Included") {
+          inclusiveRows.push(rowData);
+        } else if (p.gstType === "NotIncluded") {
+          exclusiveRows.push(rowData);
+        } else {
+          nonGstRows.push(rowData);
+        }
+      });
+    });
+
+    // Generate Sections
+    addTableSection("=== GST INCLUSIVE SALES ===", inclusiveRows);
+    addTableSection("=== GST EXCLUSIVE SALES ===", exclusiveRows);
+    addTableSection("=== GST NOT APPLICABLE / NON-GST SALES ===", nonGstRows);
+
+    // Generate Dynamic Filename
+    const monthNames = [
+      "",
+      "Jan",
+      "Feb",
+      "Mar",
+      "Apr",
+      "May",
+      "Jun",
+      "Jul",
+      "Aug",
+      "Sep",
+      "Oct",
+      "Nov",
+      "Dec",
+    ];
+    let fileName = "Sales_Report";
+
+    if (filters.startDate === filters.endDate && filters.startDate) {
+      fileName += `_${filters.startDate}`;
+    } else if (filters.startDate && filters.endDate) {
+      fileName += `_${filters.startDate}_to_${filters.endDate}`;
+    } else if (filters.month !== "All" || filters.year !== "All") {
+      if (filters.month !== "All")
+        fileName += `_${monthNames[parseInt(filters.month)]}`;
+      if (filters.year !== "All") fileName += `_${filters.year}`;
+    }
+
+    if (filters.paymentMode !== "All") fileName += `_${filters.paymentMode}`;
+    if (filters.status !== "All") fileName += `_${filters.status}`;
+
+    // Generate and Save File
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(new Blob([buffer]), `${fileName}.xlsx`);
+  };
+
   // Filter Logic
   const filteredData = useMemo(() => {
-    return MOCK_DATA.filter((item) => {
-      // Search
-      const matchesSearch =
-        item.billNo.toLowerCase().includes(filters.search.toLowerCase()) ||
-        item.customerName
-          .toLowerCase()
-          .includes(filters.search.toLowerCase()) ||
-        item.customerPhone.includes(filters.search);
+    return mappedSales
+      .filter((item) => {
+        // Search
+        const matchesSearch =
+          item.billNo.toLowerCase().includes(filters.search.toLowerCase()) ||
+          item.customerName
+            .toLowerCase()
+            .includes(filters.search.toLowerCase()) ||
+          item.customerPhone.includes(filters.search);
 
-      // Payment Mode
-      const matchesMode =
-        filters.paymentMode === "All" ||
-        item.paymentMode === filters.paymentMode;
+        // Payment Mode (Case Insensitive Fix)
+        const matchesMode =
+          filters.paymentMode === "All" ||
+          item.paymentMode.toLowerCase() === filters.paymentMode.toLowerCase();
 
-      // Status
-      const matchesStatus =
-        filters.status === "All" || item.status === filters.status;
+        // Status
+        const matchesStatus =
+          filters.status === "All" || item.status === filters.status;
 
-      // Date Range (Basic String Comparison for YYYY-MM-DD)
-      const matchesStart = !filters.startDate || item.date >= filters.startDate;
-      const matchesEnd = !filters.endDate || item.date <= filters.endDate;
+        // Date Range (Basic String Comparison for YYYY-MM-DD)
+        const matchesStart =
+          !filters.startDate || item.date >= filters.startDate;
+        const matchesEnd = !filters.endDate || item.date <= filters.endDate;
 
-      return (
-        matchesSearch &&
-        matchesMode &&
-        matchesStatus &&
-        matchesStart &&
-        matchesEnd
-      );
-    }).sort((a, b) => {
-      switch (filters.sortBy) {
-        case "Oldest":
-          return (
-            new Date(`${a.date} ${a.time}`) - new Date(`${b.date} ${b.time}`)
-          );
-        case "Highest":
-          return b.amount - a.amount;
-        case "Lowest":
-          return a.amount - b.amount;
-        case "Newest":
-        default:
-          return (
-            new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
-          );
-      }
-    });
-  }, [filters]);
+        // Month and Year Filters
+        const saleDate = new Date(item.date);
+        const matchesMonth =
+          filters.month === "All" ||
+          (saleDate.getMonth() + 1).toString() === filters.month;
+        const matchesYear =
+          filters.year === "All" ||
+          saleDate.getFullYear().toString() === filters.year;
+
+        return (
+          matchesSearch &&
+          matchesMode &&
+          matchesStatus &&
+          matchesStart &&
+          matchesEnd &&
+          matchesMonth &&
+          matchesYear
+        );
+      })
+      .sort((a, b) => {
+        switch (filters.sortBy) {
+          case "Oldest":
+            return (
+              new Date(`${a.date} ${a.time}`) - new Date(`${b.date} ${b.time}`)
+            );
+          case "Highest":
+            return b.amount - a.amount;
+          case "Lowest":
+            return a.amount - b.amount;
+          case "Newest":
+          default:
+            return (
+              new Date(`${b.date} ${b.time}`) - new Date(`${a.date} ${a.time}`)
+            );
+        }
+      });
+  }, [filters, mappedSales]);
+
+  // Paginated Data
+  const totalPages = Math.ceil(filteredData.length / pageSize);
+  const paginatedData = useMemo(() => {
+    const start = (currentPage - 1) * pageSize;
+    return filteredData.slice(start, start + pageSize);
+  }, [filteredData, currentPage, pageSize]);
+
+  if (billingLoading && sales.length === 0) {
+    return <Loader message="Loading sale history..." />;
+  }
 
   return (
-    <div
-      className="p-4"
-      style={{ height: "calc(100vh - 65px)", overflowY: "auto" }}
-    >
+    <div className="p-4">
       <div className="d-flex justify-content-between align-items-center mb-4">
         {/* <div>
           <h2 className="fw-bold mb-1 text-dark">Sale History</h2>
@@ -231,7 +421,6 @@ const SaleHistory = () => {
             View and manage past transactions
           </p>
         </div> */}
-     
       </div>
 
       <SaleHistoryStats data={filteredData} />
@@ -240,14 +429,29 @@ const SaleHistory = () => {
         filters={filters}
         onFilterChange={handleFilterChange}
         onReset={handleReset}
+        onExport={handleExport}
+        availableYears={availableYears}
       />
 
-      <SaleHistoryTable data={filteredData} onViewSale={handleViewSale} />
+      <SaleHistoryTable
+        data={paginatedData}
+        onViewSale={handleViewSale}
+        currencySymbol={currencySymbol}
+      />
+
+      <SaleHistoryPagination
+        currentPage={currentPage}
+        totalPages={totalPages}
+        onPageChange={setCurrentPage}
+        totalItems={filteredData.length}
+        pageSize={pageSize}
+      />
 
       <SaleHistoryDetailModal
         isOpen={isModalOpen}
         onClose={() => setIsModalOpen(false)}
         sale={selectedSale}
+        currencySymbol={currencySymbol}
       />
     </div>
   );

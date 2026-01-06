@@ -1,6 +1,6 @@
 import React from "react";
 
-const SaleHistoryTable = ({ data, onViewSale }) => {
+const SaleHistoryTable = ({ data, onViewSale, currencySymbol = "₹" }) => {
   return (
     <div className="bg-white rounded-4 shadow-sm border border-secondary border-opacity-10 overflow-hidden">
       <div className="table-responsive">
@@ -15,6 +15,12 @@ const SaleHistoryTable = ({ data, onViewSale }) => {
               </th>
               <th className="py-3 text-muted small fw-bold text-uppercase border-0">
                 Customer
+              </th>
+              <th
+                className="py-3 text-muted small fw-bold text-uppercase border-0"
+                style={{ minWidth: "200px" }}
+              >
+                Products
               </th>
               <th className="py-3 text-center text-muted small fw-bold text-uppercase border-0">
                 Items
@@ -41,7 +47,7 @@ const SaleHistoryTable = ({ data, onViewSale }) => {
                   <td>
                     <div className="d-flex flex-column">
                       <span className="fw-bold text-dark small">
-                        {sale.date}
+                        {sale.formattedDate}
                       </span>
                       <small
                         className="text-muted"
@@ -64,13 +70,31 @@ const SaleHistoryTable = ({ data, onViewSale }) => {
                       </small>
                     </div>
                   </td>
+                  <td>
+                    <div
+                      className="d-flex flex-wrap gap-1"
+                      style={{ maxWidth: "300px" }}
+                    >
+                      {sale.products?.map((p, idx) => (
+                        <div
+                          key={idx}
+                          className="small text-muted bg-light px-2 py-0 rounded border w-100 text-truncate"
+                          title={`${p.sku} - ${p.name}`}
+                        >
+                          <span className="fw-bold text-dark">{p.sku}</span> -{" "}
+                          {p.name}
+                        </div>
+                      ))}
+                    </div>
+                  </td>
                   <td className="text-center">
                     <span className="badge bg-light text-dark border">
                       {sale.itemsCount}
                     </span>
                   </td>
                   <td className="text-end fw-bold text-dark">
-                    ₹{sale.amount.toFixed(2)}
+                    {currencySymbol}
+                    {sale.amount.toFixed(2)}
                   </td>
                   <td className="text-center">
                     <span className="badge bg-secondary bg-opacity-10 text-secondary border border-secondary border-opacity-10">

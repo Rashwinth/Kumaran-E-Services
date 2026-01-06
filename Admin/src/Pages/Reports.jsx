@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import ReportFilters from "../Components/Reports/ReportFilters";
 import ReportStats from "../Components/Reports/ReportStats";
 import ReportTable from "../Components/Reports/ReportTable";
@@ -6,6 +6,16 @@ import "../Styles/Reports.css";
 import axios from "axios";
 import { useBranch } from "../Context/BranchContext";
 import { useAuth } from "../Context/AuthContext";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
+const formatDateStr = (dateStr, format) => {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [y, m, d] = dateStr.split("-");
+  if (format === "DD/MM/YYYY") return `${d}/${m}/${y}`;
+  if (format === "MM/DD/YYYY") return `${m}/${d}/${y}`;
+  return dateStr;
+};
 
 const Reports = () => {
   const { branches, getBranches } = useBranch();
@@ -45,20 +55,39 @@ const Reports = () => {
           headers: { Authorization: `Bearer ${accessToken}` },
         });
         if (response.data.success) {
-          const rawData = response.data.data.map((item) => ({
-            date: item.dateStr || item.createdAt, // Prioritize dateStr (YYYY-MM-DD) if available
-            billNumber: item.billNumber,
-            rawBranchId: item.branchId, // Store raw ID for mapping later
-            customerName: item.customer?.name || "Walk-in",
-            customerPhone: item.customer?.phone,
-            paymentMethod:
-              item.paymentMethod?.type +
-              (item.paymentMethod?.upiAccountName
-                ? ` (${item.paymentMethod.upiAccountName})`
-                : ""),
-            amount: item.grandTotal,
-            status: item.status,
-          }));
+          const rawData = response.data.data.map((item) => {
+            const createdDate = new Date(item.createdAt);
+            const dateStr =
+              item.dateStr || createdDate.toISOString().split("T")[0];
+
+            return {
+              id: item._id,
+              date: dateStr,
+              time: createdDate.toLocaleTimeString([], {
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              billNumber: item.billNumber,
+              rawBranchId: item.branchId,
+              customerName: item.customer?.name || "Walk-in",
+              customerPhone: item.customer?.phone || "N/A",
+              paymentMethod:
+                item.paymentMethod?.type +
+                (item.paymentMethod?.upiAccountName
+                  ? ` (${item.paymentMethod.upiAccountName})`
+                  : ""),
+              amount: item.grandTotal,
+              status: item.status === "Completed" ? "Paid" : item.status,
+              items: item.items || [],
+              cgstTotal: item.totalTax
+                ? Number((item.totalTax / 2).toFixed(2))
+                : 0,
+              sgstTotal: item.totalTax
+                ? Number((item.totalTax - item.totalTax / 2).toFixed(2))
+                : 0,
+              totalTax: item.totalTax || 0,
+            };
+          });
           setData(rawData);
           applyFilters(rawData, filters);
         }
@@ -203,14 +232,21 @@ const Reports = () => {
   };
 
   const calculateStats = (dataSet) => {
-    const totalSales = dataSet.reduce(
+    // Stats calculation based on unique bills to avoid double counting items
+    const uniqueSales = Array.from(
+      new Map(
+        dataSet.map((item) => [item._id || item.billNumber, item])
+      ).values()
+    );
+    const totalSales = uniqueSales.reduce(
       (sum, item) => sum + (item.amount || 0),
       0
     );
-    const uniqueCustomers = new Set(dataSet.map((i) => i.customerName)).size;
+    const uniqueCustomers = new Set(uniqueSales.map((i) => i.customerName))
+      .size;
     setStats({
       totalSales,
-      totalBills: dataSet.length,
+      totalBills: uniqueSales.length,
       totalCustomers: uniqueCustomers,
     });
   };
@@ -220,12 +256,195 @@ const Reports = () => {
   };
 
   // Map branch names for display
-  const displayData = filteredData.map((item) => ({
-    ...item,
-    branchName:
-      branches.find((b) => b._id === item.rawBranchId)?.name ||
-      "Unknown Branch",
-  }));
+  const displayData = useMemo(() => {
+    return filteredData.map((item) => ({
+      ...item,
+      branchName:
+        branches.find((b) => b._id === item.rawBranchId)?.name ||
+        "Unknown Branch",
+      formattedDate: formatDateStr(item.date, "DD/MM/YYYY"), // Default admin format
+    }));
+  }, [filteredData, branches]);
+
+  const handleExport = async () => {
+    if (displayData.length === 0) {
+      return alert("No data to export");
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Admin Sales Report");
+
+    // Add Main Title
+    const titleRow = worksheet.addRow(["KES ADMIN CONSOLE - SALES REPORT"]);
+    titleRow.font = { bold: true, size: 18 };
+    worksheet.mergeCells(`A${titleRow.number}:O${titleRow.number}`);
+    titleRow.alignment = { horizontal: "center" };
+    worksheet.addRow([]); // Spacer
+
+    if (filters.type === "sales") {
+      // Define Columns (15 columns for Admin with Branch)
+      const columns = [
+        { header: "Bill Number", key: "billNo", width: 25 },
+        { header: "Date", key: "date", width: 15 },
+        { header: "Branch", key: "branch", width: 20 },
+        { header: "Customer", key: "customerName", width: 20 },
+        { header: "Phone", key: "customerPhone", width: 15 },
+        { header: "Product Code", key: "sku", width: 15 },
+        { header: "Product Name", key: "name", width: 30 },
+        { header: "Qty", key: "qty", width: 10 },
+        { header: "Rate", key: "price", width: 15 },
+        { header: "Taxable Value", key: "taxableValue", width: 15 },
+        { header: "CGST", key: "cgst", width: 12 },
+        { header: "SGST", key: "sgst", width: 12 },
+        { header: "Line Total", key: "lineTotal", width: 18 },
+        { header: "Mode", key: "paymentMode", width: 15 },
+        { header: "Status", key: "status", width: 12 },
+      ];
+      worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
+
+      const addTableSection = (title, rowData) => {
+        if (rowData.length === 0) return;
+
+        // Section Title
+        const sTitleRow = worksheet.addRow([title]);
+        sTitleRow.font = { bold: true, size: 16, color: { argb: "FF1F4E78" } };
+        worksheet.mergeCells(`A${sTitleRow.number}:O${sTitleRow.number}`);
+        sTitleRow.alignment = { horizontal: "center" };
+        worksheet.addRow([]); // Spacer
+
+        // Column Headers
+        const headerRow = worksheet.addRow(columns.map((c) => c.header));
+        headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
+        headerRow.eachCell((cell) => {
+          cell.fill = {
+            type: "pattern",
+            pattern: "solid",
+            fgColor: { argb: "FF4F81BD" },
+          };
+          cell.alignment = { vertical: "middle", horizontal: "center" };
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+
+        // Data Rows
+        rowData.forEach((row) => {
+          const excelRow = worksheet.addRow(row);
+          excelRow.font = { size: 13 };
+          // Currency formatting for Rate(9), Taxable(10), CGST(11), SGST(12), Total(13)
+          [9, 10, 11, 12, 13].forEach((colIndex) => {
+            const cell = excelRow.getCell(colIndex);
+            cell.numFmt = `"₹"#,##0.00`;
+          });
+          excelRow.eachCell((cell) => {
+            cell.border = {
+              top: { style: "thin" },
+              left: { style: "thin" },
+              bottom: { style: "thin" },
+              right: { style: "thin" },
+            };
+          });
+        });
+        worksheet.addRow([]);
+        worksheet.addRow([]);
+      };
+
+      const inclusiveRows = [];
+      const exclusiveRows = [];
+      const nonGstRows = [];
+
+      displayData.forEach((sale) => {
+        (sale.items || []).forEach((p) => {
+          const rowData = [
+            sale.billNumber,
+            sale.formattedDate,
+            sale.branchName,
+            sale.customerName,
+            sale.customerPhone,
+            p.product?.sku || p.sku || "N/A",
+            p.product?.name || p.name || "N/A",
+            p.qty,
+            p.price,
+            p.taxableValue || p.lineTotal - p.taxAmount,
+            p.taxAmount / 2,
+            p.taxAmount - p.taxAmount / 2,
+            p.lineTotal,
+            sale.paymentMethod,
+            sale.status,
+          ];
+          const gstType = p.product?.gstType || p.gstType;
+          if (gstType === "Included") inclusiveRows.push(rowData);
+          else if (gstType === "NotIncluded") exclusiveRows.push(rowData);
+          else nonGstRows.push(rowData);
+        });
+      });
+
+      addTableSection("=== GST INCLUSIVE SALES ===", inclusiveRows);
+      addTableSection("=== GST EXCLUSIVE SALES ===", exclusiveRows);
+      addTableSection("=== NON-GST / EXEMPT SALES ===", nonGstRows);
+    } else {
+      // Branch Performance Report
+      worksheet.columns = [
+        { header: "Branch Name", key: "name", width: 35 },
+        { header: "Total Bills", key: "bills", width: 15 },
+        { header: "Total Sales", key: "sales", width: 20 },
+      ];
+
+      const headerRow = worksheet.addRow([
+        "=== BRANCH PERFORMANCE SUMMARY ===",
+      ]);
+      headerRow.font = { bold: true, size: 14 };
+      worksheet.mergeCells(`A${headerRow.number}:C${headerRow.number}`);
+      headerRow.alignment = { horizontal: "center" };
+
+      const colHeaderRow = worksheet.addRow([
+        "Branch Name",
+        "Total Bills",
+        "Total Sales",
+      ]);
+      colHeaderRow.font = { bold: true, color: { argb: "FFFFFFFF" } };
+      colHeaderRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4F81BD" },
+        };
+        cell.alignment = { horizontal: "center" };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+
+      displayData.forEach((row) => {
+        const tr = worksheet.addRow([
+          row.branchName,
+          row.totalBills,
+          row.totalSales,
+        ]);
+        tr.getCell(3).numFmt = `"₹"#,##0.00`;
+        tr.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+    }
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(
+      new Blob([buffer]),
+      `Admin_Sales_Export_${new Date().toISOString().split("T")[0]}.xlsx`
+    );
+  };
 
   return (
     <div className="reports-container">
@@ -240,6 +459,7 @@ const Reports = () => {
         filters={filters}
         onFilterChange={handleFilterChange}
         onGenerate={handleGenerate}
+        onExport={handleExport}
       />
 
       {loading ? (

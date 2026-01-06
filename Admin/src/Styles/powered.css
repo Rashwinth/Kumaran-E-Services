@@ -1,11 +1,10 @@
 .powered-container {
   display: flex;
-  flex-direction: column;
+  flex-direction: row;
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding-top: 1.5rem;
-  padding-bottom: 1.5rem;
+  padding-top: 1rem;
 }
 
 .powered-group {
@@ -34,13 +33,11 @@
 .powered-logo-wrapper img {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit:contain;
+  transform: scale(1.5);
+  margin-top: 7px;
 }
 
-.powered-group:hover .powered-logo-wrapper {
-  transform: rotate(6deg) scale(1.05);
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
-}
 
 /* Gradual letter spacing expansion */
 .powered-text {
@@ -48,6 +45,3 @@
   font-weight: 700; /* fw-bold */
 }
 
-.powered-group:hover .powered-text {
-  letter-spacing: 0.07em;
-}

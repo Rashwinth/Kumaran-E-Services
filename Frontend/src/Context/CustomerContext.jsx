@@ -37,7 +37,7 @@ export const CustomerProvider = ({ children }) => {
 
         // Serve from cache while fetching fresh data
         if (!force) {
-          const cached = getCache(CACHE_KEYS.CUSTOMERS);
+          const cached = await getCache(CACHE_KEYS.CUSTOMERS);
           if (cached) {
             setCustomers(cached);
           }
@@ -48,7 +48,7 @@ export const CustomerProvider = ({ children }) => {
         });
         if (res.data.success) {
           setCustomers(res.data.data);
-          setCache(CACHE_KEYS.CUSTOMERS, res.data.data, TTL.SHORT);
+          await setCache(CACHE_KEYS.CUSTOMERS, res.data.data, TTL.SHORT);
         }
       } catch (error) {
         console.error("Error fetching customers:", error);

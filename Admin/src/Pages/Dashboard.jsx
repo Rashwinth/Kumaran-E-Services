@@ -438,7 +438,7 @@ const Dashboard = () => {
                   branches.map((branch) => (
                     <div key={branch._id} className="branch-group mb-4">
                       <h6 className="text-muted small fw-bold text-uppercase mb-3">
-                        {branch.name}
+                        {branch.name.toUpperCase()}
                       </h6>
                       <div className="quick-actions-grid branch-actions-grid">
                         <Link
@@ -447,7 +447,7 @@ const Dashboard = () => {
                           title="Inventory & Products"
                         >
                           <div className="qa-icon bg-soft-blue">
-                            <i className="bi bi-box-seam"></i>
+                            <i className="bi bi-box"></i>
                           </div>
                           <span>Products</span>
                         </Link>
@@ -467,7 +467,7 @@ const Dashboard = () => {
                           title="Account & Billing"
                         >
                           <div className="qa-icon bg-soft-purple">
-                            <i className="bi bi-bank"></i>
+                            <i className="bi bi-building-columns"></i>
                           </div>
                           <span>Accounts</span>
                         </Link>
@@ -477,7 +477,7 @@ const Dashboard = () => {
                           title="Sales Reports"
                         >
                           <div className="qa-icon bg-soft-orange">
-                            <i className="bi bi-bar-chart-line"></i>
+                            <i className="bi bi-graph-up-arrow"></i>
                           </div>
                           <span>Reports</span>
                         </Link>

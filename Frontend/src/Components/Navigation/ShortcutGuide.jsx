@@ -22,6 +22,7 @@ const ShortcutGuide = ({ isOpen, onClose }) => {
     { key: "Alt + L", desc: "Logout" },
     { key: "Alt + c", desc: "Credit Customers" },
     { key: "Ctrl + F", desc: "Product Catalog" },
+    { key: "Alt + s", desc: "Sale History" },
   ];
 
   return (

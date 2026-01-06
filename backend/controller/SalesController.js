@@ -228,7 +228,7 @@ exports.getSales = async (req, res) => {
       })
       .populate("sales.staff", "name")
       .populate("sales.customer", "name phone city")
-      .populate("sales.items.product", "name sku")
+      .populate("sales.items.product", "name sku gstType gst")
       .sort({ date: -1 });
 
     const flattenedSales = dailyRecords.reduce((acc, record) => {

@@ -9,6 +9,7 @@ import axios from "axios";
 import { toast } from "react-toastify";
 
 import { API_BASE, API_ENDPOINTS } from "../config/api.jsx";
+import { clearAllCache } from "../utils/cacheUtils";
 
 const AuthContext = createContext();
 
@@ -30,27 +31,15 @@ export const AuthProvider = ({ children }) => {
   axios.defaults.withCredentials = true;
 
   // Clear auth state
-  const clearAuthState = useCallback(() => {
+  const clearAuthState = useCallback(async () => {
     setAccessToken(null);
     setUser(null);
     setIsAuthenticated(false);
-    localStorage.removeItem("kes_offline_session");
+    await clearAllCache();
   }, []);
 
   // Refresh access token using HTTP-only cookie
   const refreshAccessToken = useCallback(async () => {
-    // Proactively check offline status to avoid axios hang
-    if (!navigator.onLine) {
-      const savedSession = localStorage.getItem("kes_offline_session");
-      if (savedSession) {
-        const { user: savedUser } = JSON.parse(savedSession);
-        setUser(savedUser);
-        setIsAuthenticated(true);
-        return null;
-      }
-      throw new Error("Offline and no saved session");
-    }
-
     try {
       const response = await axios.post(
         API_ENDPOINTS.AUTH.REFRESH,
@@ -64,20 +53,12 @@ export const AuthProvider = ({ children }) => {
         setAccessToken(response.data.accessToken);
         setUser(response.data.user);
         setIsAuthenticated(true);
-        // Persist session for offline refresh
-        localStorage.setItem(
-          "kes_offline_session",
-          JSON.stringify({
-            user: response.data.user,
-            timestamp: Date.now(),
-          })
-        );
         return response.data.accessToken;
       } else {
         throw new Error("Token refresh failed");
       }
     } catch (error) {
-      console.log("ℹ️ Auto-login logic: No active cookie/session found");
+      toast.error("ℹ️ Auto-login logic: No active cookie/session found");
       clearAuthState();
       throw error;
     }

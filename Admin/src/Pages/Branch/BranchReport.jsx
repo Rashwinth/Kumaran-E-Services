@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useParams, useNavigate, useLocation } from "react-router-dom";
 import ReportFilters from "../../Components/Reports/ReportFilters";
 import ReportStats from "../../Components/Reports/ReportStats";
@@ -8,6 +8,16 @@ import axios from "axios";
 import { useBranch } from "../../Context/BranchContext";
 import { useAuth } from "../../Context/AuthContext";
 import BackButton from "../../Components/BackButton";
+import ExcelJS from "exceljs";
+import { saveAs } from "file-saver";
+
+const formatDateStr = (dateStr, format) => {
+  if (!dateStr || !dateStr.includes("-")) return dateStr;
+  const [y, m, d] = dateStr.split("-");
+  if (format === "DD/MM/YYYY") return `${d}/${m}/${y}`;
+  if (format === "MM/DD/YYYY") return `${m}/${d}/${y}`;
+  return dateStr;
+};
 
 const BranchReport = () => {
   const { id } = useParams();
@@ -75,20 +85,39 @@ const BranchReport = () => {
       });
 
       if (response.data.success) {
-        const rawData = response.data.data.map((item) => ({
-          date: item.dateStr || item.createdAt,
-          billNumber: item.billNumber,
-          rawBranchId: item.branchId,
-          customerName: item.customer?.name || "Walk-in",
-          customerPhone: item.customer?.phone,
-          paymentMethod:
-            item.paymentMethod?.type +
-            (item.paymentMethod?.upiAccountName
-              ? ` (${item.paymentMethod.upiAccountName})`
-              : ""),
-          amount: item.grandTotal,
-          status: item.status,
-        }));
+        const rawData = response.data.data.map((item) => {
+          const createdDate = new Date(item.createdAt);
+          const dateStr =
+            item.dateStr || createdDate.toISOString().split("T")[0];
+
+          return {
+            id: item._id,
+            date: dateStr,
+            time: createdDate.toLocaleTimeString([], {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            billNumber: item.billNumber,
+            rawBranchId: item.branchId,
+            customerName: item.customer?.name || "Walk-in",
+            customerPhone: item.customer?.phone || "N/A",
+            paymentMethod:
+              item.paymentMethod?.type +
+              (item.paymentMethod?.upiAccountName
+                ? ` (${item.paymentMethod.upiAccountName})`
+                : ""),
+            amount: item.grandTotal,
+            status: item.status === "Completed" ? "Paid" : item.status,
+            items: item.items || [],
+            cgstTotal: item.totalTax
+              ? Number((item.totalTax / 2).toFixed(2))
+              : 0,
+            sgstTotal: item.totalTax
+              ? Number((item.totalTax - item.totalTax / 2).toFixed(2))
+              : 0,
+            totalTax: item.totalTax || 0,
+          };
+        });
 
         // Important: Filter data by current branch ID immediately
         const branchData = rawData.filter(
@@ -196,14 +225,21 @@ const BranchReport = () => {
   };
 
   const calculateStats = (dataSet) => {
-    const totalSales = dataSet.reduce(
+    // Stats calculation based on unique bills to avoid double counting items
+    const uniqueSales = Array.from(
+      new Map(
+        dataSet.map((item) => [item.id || item.billNumber, item])
+      ).values()
+    );
+    const totalSales = uniqueSales.reduce(
       (sum, item) => sum + (item.amount || 0),
       0
     );
-    const uniqueCustomers = new Set(dataSet.map((i) => i.customerName)).size;
+    const uniqueCustomers = new Set(uniqueSales.map((i) => i.customerName))
+      .size;
     setStats({
       totalSales,
-      totalBills: dataSet.length,
+      totalBills: uniqueSales.length,
       totalCustomers: uniqueCustomers,
     });
   };
@@ -212,10 +248,157 @@ const BranchReport = () => {
     setFilters((prev) => ({ ...prev, [name]: value }));
   };
 
-  const displayData = filteredData.map((item) => ({
-    ...item,
-    branchName: currentBranch?.name || "Target Branch",
-  }));
+  const displayData = useMemo(() => {
+    return filteredData.map((item) => ({
+      ...item,
+      branchName: currentBranch?.name || "Target Branch",
+      formattedDate: formatDateStr(item.date, "DD/MM/YYYY"),
+    }));
+  }, [filteredData, currentBranch]);
+
+  const handleExport = async () => {
+    if (displayData.length === 0) {
+      return alert("No data to export");
+    }
+
+    const workbook = new ExcelJS.Workbook();
+    const worksheet = workbook.addWorksheet("Branch Sales Report");
+
+    // Add Branch Info Header
+    if (currentBranch) {
+      const bNameRow = worksheet.addRow([currentBranch.name?.toUpperCase()]);
+      bNameRow.font = { bold: true, size: 18 };
+      worksheet.mergeCells(`A${bNameRow.number}:N${bNameRow.number}`);
+      bNameRow.alignment = { horizontal: "center" };
+
+      const bAddrRow = worksheet.addRow([
+        `${currentBranch.address?.street || ""}, ${
+          currentBranch.address?.city || ""
+        }`,
+      ]);
+      bAddrRow.font = { size: 12 };
+      worksheet.mergeCells(`A${bAddrRow.number}:N${bAddrRow.number}`);
+      bAddrRow.alignment = { horizontal: "center" };
+
+      const bContactRow = worksheet.addRow([
+        `Contact: ${
+          currentBranch.contactPhone || currentBranch.phone || "N/A"
+        }`,
+      ]);
+      bContactRow.font = { size: 12 };
+      worksheet.mergeCells(`A${bContactRow.number}:N${bContactRow.number}`);
+      bContactRow.alignment = { horizontal: "center" };
+
+      worksheet.addRow([]); // Spacer
+    }
+
+    // Define Base Columns
+    const columns = [
+      { header: "Bill Number", key: "billNo", width: 25 },
+      { header: "Date", key: "date", width: 15 },
+      { header: "Customer", key: "customerName", width: 20 },
+      { header: "Phone", key: "customerPhone", width: 15 },
+      { header: "Product Code", key: "sku", width: 15 },
+      { header: "Product Name", key: "name", width: 30 },
+      { header: "Qty", key: "qty", width: 10 },
+      { header: "Rate", key: "price", width: 15 },
+      { header: "Taxable Value", key: "taxableValue", width: 15 },
+      { header: "CGST", key: "cgst", width: 12 },
+      { header: "SGST", key: "sgst", width: 12 },
+      { header: "Line Total", key: "lineTotal", width: 18 },
+      { header: "Mode", key: "paymentMode", width: 15 },
+      { header: "Status", key: "status", width: 12 },
+    ];
+    worksheet.columns = columns.map((c) => ({ key: c.key, width: c.width }));
+
+    const addTableSection = (title, rowData) => {
+      if (rowData.length === 0) return;
+
+      const sTitleRow = worksheet.addRow([title]);
+      sTitleRow.font = { bold: true, size: 16, color: { argb: "FF1F4E78" } };
+      worksheet.mergeCells(`A${sTitleRow.number}:N${sTitleRow.number}`);
+      sTitleRow.alignment = { horizontal: "center" };
+      worksheet.addRow([]); // Spacer
+
+      const headerRow = worksheet.addRow(columns.map((c) => c.header));
+      headerRow.font = { bold: true, color: { argb: "FFFFFFFF" }, size: 14 };
+      headerRow.eachCell((cell) => {
+        cell.fill = {
+          type: "pattern",
+          pattern: "solid",
+          fgColor: { argb: "FF4F81BD" },
+        };
+        cell.alignment = { vertical: "middle", horizontal: "center" };
+        cell.border = {
+          top: { style: "thin" },
+          left: { style: "thin" },
+          bottom: { style: "thin" },
+          right: { style: "thin" },
+        };
+      });
+
+      rowData.forEach((row) => {
+        const excelRow = worksheet.addRow(row);
+        excelRow.font = { size: 13 };
+        // Currency formatting for Rate(8), Taxable(9), CGST(10), SGST(11), Total(12)
+        [8, 9, 10, 11, 12].forEach((colIndex) => {
+          const cell = excelRow.getCell(colIndex);
+          cell.numFmt = `"₹"#,##0.00`;
+        });
+        excelRow.eachCell((cell) => {
+          cell.border = {
+            top: { style: "thin" },
+            left: { style: "thin" },
+            bottom: { style: "thin" },
+            right: { style: "thin" },
+          };
+        });
+      });
+      worksheet.addRow([]);
+      worksheet.addRow([]);
+    };
+
+    const inclusiveRows = [];
+    const exclusiveRows = [];
+    const nonGstRows = [];
+
+    displayData.forEach((sale) => {
+      (sale.items || []).forEach((p) => {
+        const rowData = [
+          sale.billNumber,
+          sale.formattedDate,
+          sale.customerName,
+          sale.customerPhone,
+          p.product?.sku || p.sku || "N/A",
+          p.product?.name || p.name || "N/A",
+          p.qty,
+          p.price,
+          p.taxableValue || p.lineTotal - p.taxAmount,
+          p.taxAmount / 2,
+          p.taxAmount - p.taxAmount / 2,
+          p.lineTotal,
+          sale.paymentMethod,
+          sale.status,
+        ];
+        const gstType = p.product?.gstType || p.gstType;
+        if (gstType === "Included") inclusiveRows.push(rowData);
+        else if (gstType === "NotIncluded") exclusiveRows.push(rowData);
+        else nonGstRows.push(rowData);
+      });
+    });
+
+    addTableSection("=== GST INCLUSIVE SALES ===", inclusiveRows);
+    addTableSection("=== GST EXCLUSIVE SALES ===", exclusiveRows);
+    addTableSection("=== NON-GST / EXEMPT SALES ===", nonGstRows);
+
+    const buffer = await workbook.xlsx.writeBuffer();
+    saveAs(
+      new Blob([buffer]),
+      `${currentBranch?.name?.replace(/\s+/g, "_")}_Detailed_Report_${
+        new Date().toISOString().split("T")[0]
+      }.xlsx`
+    );
+  };
 
   return (
     <div className="reports-container">
@@ -230,7 +413,7 @@ const BranchReport = () => {
       <ReportFilters
         filters={filters}
         onFilterChange={handleFilterChange}
-        // onGenerate={handleGenerate}
+        onExport={handleExport}
         branches={branches}
         hideBranchSelector={true}
         availableTypes={[{ value: "sales", label: "Sales Report" }]}

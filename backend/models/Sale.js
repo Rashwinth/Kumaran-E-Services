@@ -11,6 +11,7 @@ const saleItemSchema = new Schema({
   price: { type: Number, required: true },
   discount: { type: Number, default: 0 },
   taxAmount: { type: Number, required: true },
+  taxableValue: { type: Number, required: true }, // New: for GST reporting
   lineTotal: { type: Number, required: true },
 });
 

@@ -28,6 +28,7 @@ const ProductBilling = () => {
     loading: billingLoading,
     refreshCustomers,
     refreshProducts,
+    refreshSales,
   } = useBilling();
   const { user, accessToken, logout } = useAuth();
   const navigate = useNavigate();
@@ -356,13 +357,17 @@ const ProductBilling = () => {
         }
 
         // Clear browser cache for products and inventory to ensure consistency
-        removeCache(CACHE_KEYS.INVENTORY_RAW);
-        removeCache(CACHE_KEYS.PRODUCTS_FLAT);
+        await removeCache(CACHE_KEYS.INVENTORY_RAW);
+        await removeCache(CACHE_KEYS.PRODUCTS_FLAT);
+        await removeCache(CACHE_KEYS.SALES);
 
         // Refresh accounts and inventory to show updated balances/stock
         await fetchAccounts();
         if (typeof refreshProducts === "function") {
           refreshProducts();
+        }
+        if (typeof refreshSales === "function") {
+          refreshSales();
         }
 
         clearTransaction();

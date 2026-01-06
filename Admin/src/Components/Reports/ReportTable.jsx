@@ -71,12 +71,6 @@ const ReportTable = ({ data, reportType }) => {
               }}
             />
           </div>
-          <button
-            className="export-btn"
-            onClick={() => alert("Export function placeholder")}
-          >
-            <i className="bi bi-download"></i> Export CSV
-          </button>
         </div>
 
         <div className="report-table-responsive">
@@ -106,7 +100,7 @@ const ReportTable = ({ data, reportType }) => {
                   <tr key={index}>
                     {reportType === "sales" ? (
                       <>
-                        <td>{formatDate(row.date)}</td>
+                        <td>{row.formattedDate || formatDate(row.date)}</td>
                         <td>{row.billNumber}</td>
                         <td>{row.branchName}</td>
                         <td>
